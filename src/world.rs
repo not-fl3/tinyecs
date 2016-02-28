@@ -31,7 +31,7 @@ impl World {
 
     pub fn refresh_entity(&mut self, entity_id : i32) {
         let e = &mut self.entities.get_mut(&entity_id).unwrap();
-        for (i, &(ref system, ref registred)) in self.systems.iter().enumerate() {
+        for (i, &mut (ref mut system, ref registred)) in self.systems.iter_mut().enumerate() {
             let entities = self.active_systems.get_mut(i).unwrap();
 
             if registred.check(e) {

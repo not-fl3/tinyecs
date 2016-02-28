@@ -13,7 +13,7 @@ impl Component for Position {}
 
 pub struct DrawerSystem;
 impl System for DrawerSystem {
-    fn on_added(&self, entity : &mut Entity) {
+    fn on_added(&mut self, entity : &mut Entity) {
         println!("drawer added {}", entity.id);
     }
 
@@ -31,7 +31,7 @@ impl System for DeadDrawerSystem {
 
 pub struct MoverSystem;
 impl System for MoverSystem {
-    fn on_added(&self, entity : &mut Entity) {
+    fn on_added(&mut self, entity : &mut Entity) {
         println!("mover added {}", entity.id);
     }
 
