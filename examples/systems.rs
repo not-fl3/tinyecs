@@ -17,14 +17,14 @@ impl System for DrawerSystem {
         println!("drawer added {}", entity.id);
     }
 
-    fn process(&self, entity : &mut Entity) {
+    fn process(&mut self, entity : &mut Entity) {
         println!("{}", entity.get_component::<Position>().pos[0]);
     }
 }
 
 pub struct DeadDrawerSystem;
 impl System for DeadDrawerSystem {
-    fn process(&self, entity : &mut Entity) {
+    fn process(&mut self, entity : &mut Entity) {
         println!("is dead {}", entity.get_component::<Position>().pos[0]);
     }
 }
@@ -35,7 +35,7 @@ impl System for MoverSystem {
         println!("mover added {}", entity.id);
     }
 
-    fn process(&self, entity : &mut Entity) {
+    fn process(&mut self, entity : &mut Entity) {
         let t : &mut Position = entity.get_component::<Position>();
         t.pos[0] += 0.1;
 
@@ -55,9 +55,9 @@ fn main() {
         world.refresh_entity(eid);
     }
 
-    world.set_system(MoverSystem, vec![TypeId::of::<Position>()]);
-    world.set_system(DrawerSystem, vec![TypeId::of::<Position>()]);
-    world.set_system(DeadDrawerSystem, vec![TypeId::of::<Position>(), TypeId::of::<Dead>()]);
+    world.set_system(MoverSystem, Aspect::all::<Position>());
+    world.set_system(DrawerSystem, Aspect::all::<Position>());
+    world.set_system(DeadDrawerSystem, Aspect::all2::<Position, Dead>());
 
     world.update();
     world.update();
