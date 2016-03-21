@@ -1,5 +1,3 @@
-use std::collections::{HashMap};
-
 use entity::*;
 use world_data::*;
 
@@ -22,7 +20,14 @@ pub trait System {
         self.process_with_data(entity, world, &mut SomeData::None);
     }
 
-    fn process_with_data(&mut self, entity : &mut Entity, world : &mut WorldData, _ : &mut SomeData) {
+    fn process_with_data(&mut self,
+                         entity : &mut Entity,
+                         world : &mut WorldData,
+                         _ : &mut SomeData) {
         self.process(entity, world);
     }
+
+    fn process_all(&mut self, _ : &mut Vec<&mut Entity>, _ : &mut SomeData) {
+    }
+
 }

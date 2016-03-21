@@ -17,14 +17,14 @@ impl System for DrawerSystem {
         println!("drawer added {}", entity.id);
     }
 
-    fn process(&mut self, entity : &mut Entity, world : &mut WorldData) {
+    fn process(&mut self, entity : &mut Entity, _ : &mut WorldData) {
         println!("{}", entity.get_component::<Position>().pos[0]);
     }
 }
 
 pub struct DeadDrawerSystem;
 impl System for DeadDrawerSystem {
-    fn process(&mut self, entity : &mut Entity, world : &mut WorldData) {
+    fn process(&mut self, entity : &mut Entity, _ : &mut WorldData) {
         println!("is dead {}", entity.get_component::<Position>().pos[0]);
     }
 }
@@ -35,7 +35,7 @@ impl System for MoverSystem {
         println!("mover added {}", entity.id);
     }
 
-    fn process(&mut self, entity : &mut Entity, world : &mut WorldData) {
+    fn process(&mut self, entity : &mut Entity, _ : &mut WorldData) {
         let t : &mut Position = entity.get_component::<Position>();
         t.pos[0] += 0.1;
 

@@ -1,8 +1,5 @@
 use std::collections::{HashSet};
-//use time::PreciseTime;
-use std::time;
 use std::time::Instant;
-use std::time::Duration;
 
 pub use entity::*;
 pub use component::*;
@@ -13,10 +10,28 @@ use fast_dict::*;
 
 pub type EntityIdSet = HashSet<i32>;
 
+pub struct SystemData {
+    pub system       : Box<System>,
+    pub aspect       : Aspect,
+    pub data_aspects : Vec<Aspect>
+}
+impl SystemData {
+    pub fn new(system : Box<System>, aspect : Aspect, data_aspects : Vec<Aspect>) -> SystemData {
+        SystemData {
+            system : system,
+            aspect : aspect,
+            data_aspects : data_aspects
+        }
+    }
+}
+pub struct SelectedEntities {
+    pub entity_set    : EntityIdSet,
+    pub data_set      : Vec<EntityIdSet>
+}
 pub struct World {
     pub entities       : FastDictionary<Entity>,
-    pub systems        : FastDictionary<(Box<System>, Aspect, Vec<Aspect>)>,
-    pub active_systems : FastDictionary<(EntityIdSet, Vec<EntityIdSet>)>,
+    pub systems        : FastDictionary<SystemData>,
+    pub active_systems : FastDictionary<SelectedEntities>,
     update_time        : Instant,
     last_id            : i32
 }
@@ -43,28 +58,28 @@ impl World {
     }
     pub fn refresh_entity(&mut self, entity_id : i32) {
         let e = &mut self.entities.get_mut_no_check(entity_id as isize);
-        for (i, &mut (ref mut system, ref aspect, ref data_aspects)) in
+        for (i, &mut SystemData { ref mut system, ref aspect, ref data_aspects }) in
             self.systems.iter_mut().enumerate()
         {
             let entities = self.active_systems.get_mut(i).unwrap();
 
             if aspect.check(e) {
-                if entities.0.contains(&entity_id) == false {
-                    entities.0.insert(entity_id);
+                if entities.entity_set.contains(&entity_id) == false {
+                    entities.entity_set.insert(entity_id);
                     system.on_added(e);
                 }
             } else {
-                if entities.0.contains(&entity_id) {
-                    entities.0.remove(&entity_id);
+                if entities.entity_set.contains(&entity_id) {
+                    entities.entity_set.remove(&entity_id);
                     system.on_removed(e);
                 }
             }
 
-            if entities.1.len() != data_aspects.len() {
-                entities.1.resize(data_aspects.len(), HashSet::new());
+            if entities.data_set.len() != data_aspects.len() {
+                entities.data_set.resize(data_aspects.len(), HashSet::new());
             }
             for (data_aspect, mut entities) in data_aspects.iter().
-                zip(entities.1.iter_mut())
+                zip(entities.data_set.iter_mut())
             {
                 if data_aspect.check(e) {
                     if entities.contains(&entity_id) == false {
@@ -90,10 +105,12 @@ impl World {
         where TSys : 'static + System {
         let len = self.active_systems.vec.len();
         self.active_systems.insert(len,
-                                   (HashSet::new(),
-                                    vec![HashSet::new(); data_aspects.len()]));
+                                   SelectedEntities {
+                                       entity_set : HashSet::new(),
+                                       data_set   : vec![HashSet::new(); data_aspects.len()]
+                                   });
         let len = self.systems.vec.len();
-        self.systems.insert(len, (Box::new(system), types, data_aspects));
+        self.systems.insert(len, SystemData::new(Box::new(system), types, data_aspects));
         for e in self.entities.iter_mut() {
             e.fresh = false;
         }
@@ -117,20 +134,54 @@ impl World {
         }
 
         for (i, ref entities) in self.active_systems.iter().enumerate() {
-            if entities.0.len() != 0 {
-                let mut system = &mut self.systems.get_mut(i as usize).unwrap().0;
+            if entities.entity_set.len() != 0 {
+                let mut system = &mut self.systems.get_mut(i as usize).unwrap().system;
                 (**system).on_begin_frame();
-                for eid in &entities.0 {
-                    if entities.1.len() == 0 {
+            }
+        }
+
+        for (i, ref entities) in self.active_systems.iter().enumerate() {
+            if entities.entity_set.len() != 0 {
+                {
+                let mut system = &mut self.systems.get_mut(i as usize).unwrap().system;
+
+                for eid in &entities.entity_set {
+                    if entities.data_set.len() == 0 {
                         let entity = self.entities.get_mut_no_check(*eid as isize);
                         (**system).process_with_data(entity, &mut world_data, &mut SomeData::None);
                     } else {
-                        for eid1 in &entities.1[0] {
+                        for eid1 in &entities.data_set[0] {
                             let (entity, data_entity) = self.entities.get2_mut_no_check(*eid as isize, *eid1 as isize);
                             (**system).process_with_data(entity, &mut world_data, &mut SomeData::Entity(data_entity));
                         }
                     }
                 }
+                }
+                {
+                    let ids = entities.entity_set.clone();
+
+                    let ref mut e = self.entities;
+                    let mut refs  = ids.iter().map(|id| {
+                        let id = (*id).clone();
+                        e.get_mut_no_check(id as isize)
+                    }).collect::<Vec<_>>();
+                    let mut system = &mut self.systems.get_mut(i as usize).unwrap().system;
+                    if entities.data_set.len() == 0 {
+                    } else {
+                        for eid1 in &entities.data_set[0] {
+                            let data_entity = e.get_mut_no_check(*eid1 as isize);
+                            system.process_all(&mut refs, &mut SomeData::Entity(data_entity));
+
+                        }
+
+                    }
+                }
+            }
+        }
+
+        for (i, ref entities) in self.active_systems.iter().enumerate() {
+            if entities.entity_set.len() != 0 {
+                let mut system = &mut self.systems.get_mut(i as usize).unwrap().system;
                 (**system).on_end_frame();
             }
         }

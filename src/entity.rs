@@ -33,6 +33,10 @@ impl Entity {
     pub fn remove_component<T : Any>(&mut self) {
         self.type_id_mapping.remove(&TypeId::of::<T>());
     }
+    pub fn has_component<T : Any>(&mut self) -> bool {
+        self.type_id_mapping.contains_key(&TypeId::of::<T>())
+    }
+
     pub fn get_component<T : Any>(&mut self) -> &mut T {
         self.components.get_mut(self.type_id_mapping[&TypeId::of::<T>()] as usize).unwrap().downcast_mut().unwrap()
     }
@@ -60,7 +64,22 @@ impl Entity {
         unsafe {
             (from_raw_parts_mut(ptr.offset(i as isize), 1).get_mut(0).unwrap().downcast_mut().unwrap(),
              from_raw_parts_mut(ptr.offset(i1 as isize), 1).get_mut(0).unwrap().downcast_mut().unwrap(),
-            from_raw_parts_mut(ptr.offset(i2 as isize), 1).get_mut(0).unwrap().downcast_mut().unwrap())
+             from_raw_parts_mut(ptr.offset(i2 as isize), 1).get_mut(0).unwrap().downcast_mut().unwrap())
+        }
+    }
+
+    pub fn get_components_nomut3<T : Any, T1 : Any, T2 : Any>(&self) ->
+        (&T, &T1, &T2)
+    {
+        let i = self.type_id_mapping[&TypeId::of::<T>()];
+        let i1 = self.type_id_mapping[&TypeId::of::<T1>()];
+        let i2 = self.type_id_mapping[&TypeId::of::<T2>()];
+        let ptr = self.components.as_ptr();
+
+        unsafe {
+            ((*ptr.offset(i as isize)).downcast_ref().unwrap(),
+             (*ptr.offset(i1 as isize)).downcast_ref().unwrap(),
+             (*ptr.offset(i2 as isize)).downcast_ref().unwrap())
         }
     }
 

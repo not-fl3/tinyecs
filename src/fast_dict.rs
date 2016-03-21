@@ -1,4 +1,3 @@
-use std::mem;
 use std::ptr;
 use std::slice::*;
 
@@ -37,7 +36,7 @@ impl<T> FastDictionary<T> {
     }
 
     #[inline]
-    pub fn get_mut_no_check(&mut self, key: isize) -> &mut T {
+    pub fn get_mut_no_check<'a>(&mut self, key: isize) -> &'a mut T {
         let ptr = self.vec.as_mut_ptr();
         unsafe {
             use std::slice::from_raw_parts_mut;
@@ -46,6 +45,7 @@ impl<T> FastDictionary<T> {
                 unwrap().as_mut().unwrap()
         }
     }
+
 
     #[inline]
     pub fn get2_mut_no_check(&mut self, key: isize, key2 : isize) ->
@@ -77,6 +77,12 @@ impl<T> FastDictionary<T> {
         FastDictIterMut {
             vec : (&mut self.vec[..]).iter_mut()
         }
+    }
+
+    pub fn traverse<F>(&mut self, n : isize, mut f: F)
+        where F: FnMut(&mut T)
+    {
+        f(self.get_mut_no_check(n));
     }
 }
 
