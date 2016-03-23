@@ -1,3 +1,5 @@
+#![feature(time2)]
+
 mod entity;
 mod component;
 mod world;
