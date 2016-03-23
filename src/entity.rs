@@ -40,6 +40,10 @@ impl Entity {
     pub fn get_component<T : Any>(&mut self) -> &mut T {
         self.components.get_mut(self.type_id_mapping[&TypeId::of::<T>()] as usize).unwrap().downcast_mut().unwrap()
     }
+    pub fn get_component_nomut<T : Any>(&self) -> &T {
+        self.components.get(self.type_id_mapping[&TypeId::of::<T>()] as usize).unwrap().downcast_ref().unwrap()
+    }
+
     pub fn get_components<T : Any, T1 : Any>(&mut self) -> (&mut T, &mut T1) {
         use std::slice::from_raw_parts_mut;
 

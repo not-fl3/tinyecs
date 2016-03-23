@@ -10,7 +10,6 @@ pub struct Position {
 }
 impl Component for Position {}
 
-
 pub struct DrawerSystem;
 impl System for DrawerSystem {
     fn on_added(&mut self, entity : &mut Entity) {
@@ -52,8 +51,11 @@ fn main() {
         entity.refresh();
     }
 
-    world.set_system(MoverSystem, Aspect::all::<Position>());
+    // if you have position, you will be drawn
     world.set_system(DrawerSystem, Aspect::all::<Position>());
+    // except you are dead
+    world.set_system(MoverSystem, Aspect::all::<Position>().except::<Dead>());
+    // but only if you are dead your corpse will be draw, too
     world.set_system(DeadDrawerSystem, Aspect::all2::<Position, Dead>());
 
     world.update();
