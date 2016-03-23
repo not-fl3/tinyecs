@@ -49,10 +49,7 @@ fn main() {
     {
         let mut entity = world.try_get_entity(eid).unwrap();
         entity.add_component(Position {pos : [0.0, 0.0, 0.0]});
-    }
-
-    {
-        world.refresh_entity(eid);
+        entity.refresh();
     }
 
     world.set_system(MoverSystem, Aspect::all::<Position>());
