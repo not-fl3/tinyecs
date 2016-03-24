@@ -1,4 +1,4 @@
-extern crate tinyecs;
+#[macro_use] extern crate tinyecs;
 
 use tinyecs::*;
 
@@ -25,10 +25,7 @@ impl Component for Camera {}
 pub struct RenderSystem;
 
 impl System for RenderSystem {
-    fn process_with_data(&mut self,
-                         entity : &mut Entity,
-                         _      : &mut WorldData,
-                         data   : &mut SomeData) {
+    fn process_d(&mut self, entity : &mut Entity, data : &mut SomeData) {
         let cam = data.unwrap_entity();
         let cam = cam.get_component::<Camera>();
 
@@ -43,8 +40,9 @@ pub struct DeferRenderSystem;
 impl System for DeferRenderSystem {
     fn process_all(&mut self,
                    entities : &mut Vec<&mut Entity>,
+                   _   : &mut WorldData,
                    data   : &mut SomeData) {
-        entities.sort_by(|mut e1, mut e2| {
+        entities.sort_by(|e1, e2| {
             let defer1 = e1.get_component_nomut::<DeferMesh>().order;
             let defer2 = e2.get_component_nomut::<DeferMesh>().order;
             defer1.cmp(&defer2)
@@ -69,14 +67,20 @@ fn main() {
         entity.add_component(Mesh {mesh : "player".to_string()});
         entity.refresh();
     }
-
+    let cam = world.create_entity();
+    {
+        let mut entity = world.try_get_entity(cam).unwrap();
+        entity.add_component(Camera {pos : [0.0, 0.0, 0.0]});
+        entity.refresh();
+    }
     // will process all entities with Position and Mesh,
     // and in this process all entities with Camera will be accessable
     world.set_system_with_data(RenderSystem,
                                Aspect::all2::<Position, Mesh>(),
                                vec![Aspect::all::<Camera>()]);
 
-    // same system, but we got all entities enstead of processing one by one
+
+    // same system, but we will use another implementetion inside it, for processing all entities at once
     world.set_system_with_data(DeferRenderSystem,
                                Aspect::all2::<Position, Mesh>(),
                                vec![Aspect::all::<Camera>()]);

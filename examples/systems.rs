@@ -1,4 +1,4 @@
-extern crate tinyecs;
+#[macro_use] extern crate tinyecs;
 
 use tinyecs::*;
 
@@ -10,34 +10,31 @@ pub struct Position {
 }
 impl Component for Position {}
 
+
 pub struct DrawerSystem;
 impl System for DrawerSystem {
     fn on_added(&mut self, entity : &mut Entity) {
         println!("drawer added {}", entity.id);
     }
 
-    fn process(&mut self, entity : &mut Entity, _ : &mut WorldData) {
+    fn process_one(&mut self, entity : &mut Entity) {
         println!("{}", entity.get_component::<Position>().pos[0]);
     }
 }
 
 pub struct DeadDrawerSystem;
 impl System for DeadDrawerSystem {
-    fn process(&mut self, entity : &mut Entity, _ : &mut WorldData) {
+    fn process_one(&mut self, entity : &mut Entity) {
         println!("is dead {}", entity.get_component::<Position>().pos[0]);
     }
 }
 
 pub struct MoverSystem;
 impl System for MoverSystem {
-    fn on_added(&mut self, entity : &mut Entity) {
-        println!("mover added {}", entity.id);
-    }
-
-    fn process(&mut self, entity : &mut Entity, _ : &mut WorldData) {
+    fn process_one(&mut self, entity : &mut Entity) {
         let t : &mut Position = entity.get_component::<Position>();
         t.pos[0] += 0.1;
-
+        println!("Moved! {}", t.pos[0]);
     }
 }
 

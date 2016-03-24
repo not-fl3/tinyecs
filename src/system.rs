@@ -13,28 +13,41 @@ impl<'b> SomeData<'b> {
         }
     }
 }
+
 pub trait System {
     fn on_begin_frame(&mut self) {
     }
+
     fn on_added(&mut self, _ : &mut Entity) {
     }
+
     fn on_removed(&self, _ : &mut Entity) {
     }
 
     fn on_end_frame(&mut self) {
     }
-
-    fn process(&mut self, _ : &mut Entity, _ : &mut WorldData) {
+    #[inline]
+    fn process_w(&mut self, _ : &mut Entity, _ : &mut WorldData) {
     }
 
-    fn process_with_data(&mut self,
-                         entity : &mut Entity,
-                         world : &mut WorldData,
-                         _ : &mut SomeData) {
-        self.process(entity, world);
+    #[inline]
+    fn process_d(&mut self, _ : &mut Entity, _ : &mut SomeData) {
+    }
+    #[inline]
+    fn process_wd(&mut self, _ : &mut Entity, _ : &mut WorldData, _ : &mut SomeData) {
     }
 
-    fn process_all(&mut self, _ : &mut Vec<&mut Entity>, _ : &mut SomeData) {
+    #[inline]
+    fn process_one(&mut self, _ : &mut Entity) {
     }
 
+    fn process_all(&mut self, ents : &mut Vec<&mut Entity>, world: &mut WorldData, data : &mut SomeData) {
+        for e in ents.iter_mut() {
+            self.process_one(e);
+            self.process_w(e, world);
+            self.process_d(e, data);
+            self.process_wd(e, world, data);
+        }
+    }
 }
+
