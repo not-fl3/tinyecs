@@ -41,9 +41,10 @@ impl System for MoverSystem {
 
 fn main() {
     let mut world = World::new();
-    let eid = world.create_entity();
+
     {
-        let mut entity = world.try_get_entity(eid).unwrap();
+        let mut entity_manager = world.entity_manager();
+        let mut entity = entity_manager.create_entity();
         entity.add_component(Position {pos : [0.0, 0.0, 0.0]});
         entity.refresh();
     }

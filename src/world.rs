@@ -5,7 +5,7 @@ pub use entity::*;
 pub use component::*;
 pub use system::*;
 pub use aspect::*;
-pub use world_data::*;
+
 use fast_dict::*;
 
 pub type EntityIdSet = HashSet<i32>;
@@ -35,6 +35,28 @@ pub struct World {
     update_time        : Instant,
     last_id            : i32
 }
+
+pub struct EntityManager<'a> {
+    entities : &'a mut FastDictionary<Entity>,
+    last_id  : &'a mut i32
+}
+impl<'a> EntityManager<'a> {
+    pub fn create_entity(&mut self) -> &mut Entity {
+        (*self.last_id) += 1;
+        let e = Entity::new(*self.last_id);
+        self.entities.insert(*self.last_id as usize, e);
+        self.entities.get_mut(*self.last_id as usize).unwrap()
+    }
+    pub fn try_get_entity(&mut self, id : i32) -> Option<&mut Entity> {
+       self.entities.get_mut(id as usize)
+    }
+}
+
+pub struct WorldData<'a> {
+    pub delta          : f32,
+    pub entity_manager : EntityManager<'a>
+}
+
 impl World {
     pub fn new() -> World {
         World {
@@ -46,15 +68,11 @@ impl World {
         }
     }
 
-    pub fn create_entity(&mut self) -> i32 {
-        self.last_id += 1;
-        let e = Entity::new(self.last_id);
-        self.entities.insert(self.last_id as usize, e);
-        self.last_id
-    }
-
-    pub fn try_get_entity(&mut self, id : i32) -> Option<&mut Entity> {
-       self.entities.get_mut(id as usize)
+    pub fn entity_manager<'a>(&'a mut self) -> EntityManager<'a> {
+        EntityManager {
+                last_id  : &mut self.last_id,
+                entities : &mut self.entities
+        }
     }
     pub fn set_system<TSys>(&mut self, system : TSys, types : Aspect)
         where TSys : 'static + System {
@@ -82,11 +100,17 @@ impl World {
     pub fn update(&mut self) {
         let delta = self.update_time.elapsed();
         let float_delta = delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1000000000.0;
-        let mut world_data = WorldData { delta : float_delta };
+        let mut world_data = WorldData {
+            delta    : float_delta,
+            entity_manager : EntityManager {
+                last_id  : &mut self.last_id,
+                entities : &mut self.entities
+            }
+        };
 
         self.update_time = Instant::now();
 
-        for e in self.entities.iter_mut() {
+        for e in world_data.entity_manager.entities.iter_mut() {
             if e.fresh == false {
                 Self::refresh_entity(e, &mut self.systems, &mut self.active_systems);
             }
@@ -103,17 +127,18 @@ impl World {
             if entities.entity_set.len() != 0 {
                 let ids = entities.entity_set.clone();
 
-                let ref mut e = self.entities;
                 let mut refs  = ids.iter().map(|id| {
                     let id = (*id).clone();
-                    e.get_mut_no_check(id as isize)
+                    world_data.entity_manager.entities.get_mut_no_check(id as isize)
                 }).collect::<Vec<_>>();
                 let mut system = &mut self.systems.get_mut(i as usize).unwrap().system;
+
+                //system.process_world(&mut refs, );
                 if entities.data_set.len() == 0 {
                     system.process_all(&mut refs, &mut world_data, &mut SomeData::None)
                 } else {
                     for eid1 in &entities.data_set[0] {
-                        let data_entity = e.get_mut_no_check(*eid1 as isize);
+                        let data_entity = world_data.entity_manager.entities.get_mut_no_check(*eid1 as isize);
                         system.process_all(&mut refs, &mut world_data, &mut SomeData::Entity(data_entity));
                     }
 

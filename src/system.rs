@@ -1,5 +1,5 @@
 use entity::*;
-use world_data::*;
+use world::WorldData;
 
 pub enum SomeData<'a> {
     None,
@@ -41,8 +41,8 @@ pub trait System {
     fn process_one(&mut self, _ : &mut Entity) {
     }
 
-    fn process_all(&mut self, ents : &mut Vec<&mut Entity>, world: &mut WorldData, data : &mut SomeData) {
-        for e in ents.iter_mut() {
+    fn process_all(&mut self, entities : &mut Vec<&mut Entity>, world: &mut WorldData, data : &mut SomeData) {
+        for e in entities.iter_mut() {
             self.process_one(e);
             self.process_w(e, world);
             self.process_d(e, data);

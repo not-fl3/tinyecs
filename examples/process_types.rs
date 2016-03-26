@@ -60,16 +60,19 @@ impl System for DeferRenderSystem {
 
 fn main() {
     let mut world = World::new();
-    let player = world.create_entity();
+
     {
-        let mut entity = world.try_get_entity(player).unwrap();
+        let mut entity_manager = world.entity_manager();
+        let mut entity = entity_manager.create_entity();
+
         entity.add_component(Position {pos : [0.0, 0.0, 0.0]});
         entity.add_component(Mesh {mesh : "player".to_string()});
         entity.refresh();
     }
-    let cam = world.create_entity();
+
     {
-        let mut entity = world.try_get_entity(cam).unwrap();
+        let mut entity_manager = world.entity_manager();
+        let mut entity = entity_manager.create_entity();
         entity.add_component(Camera {pos : [0.0, 0.0, 0.0]});
         entity.refresh();
     }
