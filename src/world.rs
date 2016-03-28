@@ -50,6 +50,13 @@ impl<'a> EntityManager<'a> {
     pub fn try_get_entity(&mut self, id : i32) -> Option<&mut Entity> {
        self.entities.get_mut(id as usize)
     }
+
+    pub fn get_entities_by_ids<'b>(&mut self, ids : &HashSet<i32>) -> Vec<&'b mut Entity> {
+        ids.iter().map(|id| {
+            let id = (*id).clone();
+            self.entities.get_mut_no_check(id as isize)
+        }).collect::<Vec<_>>()
+    }
 }
 
 pub struct WorldData<'a> {
@@ -125,23 +132,15 @@ impl World {
 
         for (i, ref entities) in self.active_systems.iter().enumerate() {
             if entities.entity_set.len() != 0 {
-                let ids = entities.entity_set.clone();
+                let mut refs = world_data.entity_manager.get_entities_by_ids(&entities.entity_set);
 
-                let mut refs  = ids.iter().map(|id| {
-                    let id = (*id).clone();
-                    world_data.entity_manager.entities.get_mut_no_check(id as isize)
-                }).collect::<Vec<_>>();
-                let mut system = &mut self.systems.get_mut(i as usize).unwrap().system;
+                let mut system = &mut self.systems.get_mut(i as usize).unwrap();
 
-                //system.process_world(&mut refs, );
-                if entities.data_set.len() == 0 {
-                    system.process_all(&mut refs, &mut world_data, &mut SomeData::None)
-                } else {
-                    for eid1 in &entities.data_set[0] {
-                        let data_entity = world_data.entity_manager.entities.get_mut_no_check(*eid1 as isize);
-                        system.process_all(&mut refs, &mut world_data, &mut SomeData::Entity(data_entity));
-                    }
-
+                if system.data_aspects.len() == 0 || (entities.data_set.len() != 0 &&
+                                                      entities.data_set[0].len() != 0) {
+                    let mut some_data = SomeData::new(&mut world_data.entity_manager,
+                                                      &entities.data_set);
+                    system.system.process_all(&mut refs, &mut world_data, &mut some_data);
                 }
             }
         }

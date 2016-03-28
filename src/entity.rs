@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 pub use std::any::{Any, TypeId};
 
+use std::rc::Rc;
+use std::cell::RefCell;
 use component::*;
 
 pub struct Entity {
@@ -26,7 +28,7 @@ impl Entity {
         self.fresh = false;
     }
     pub fn add_component<T : Any + Component>(&mut self, component : T) {
-        self.components.push(Box::new(component));
+        self.components.push(Box::new(Rc::new(RefCell::new(Box::new(component)))));
         self.type_id_mapping.insert(TypeId::of::<T>(), self.components.len() as i32 - 1);
     }
 
@@ -37,55 +39,14 @@ impl Entity {
         self.type_id_mapping.contains_key(&TypeId::of::<T>())
     }
 
-    pub fn get_component<T : Any>(&mut self) -> &mut T {
-        self.components.get_mut(self.type_id_mapping[&TypeId::of::<T>()] as usize).unwrap().downcast_mut().unwrap()
+    pub fn get_component_cell<T : Any>(&mut self) -> Rc<RefCell<Box<T>>> {
+        let component = self.components.get_mut(self.type_id_mapping[&TypeId::of::<T>()] as usize).unwrap();
+        let c : &mut Rc<RefCell<Box<T>>> = component.downcast_mut().unwrap();
+        c.clone()
     }
+
     pub fn get_component_nomut<T : Any>(&self) -> &T {
         self.components.get(self.type_id_mapping[&TypeId::of::<T>()] as usize).unwrap().downcast_ref().unwrap()
     }
-
-    pub fn get_components<T : Any, T1 : Any>(&mut self) -> (&mut T, &mut T1) {
-        use std::slice::from_raw_parts_mut;
-
-        let i = self.type_id_mapping[&TypeId::of::<T>()];
-        let i1 = self.type_id_mapping[&TypeId::of::<T1>()];
-        let ptr = self.components.as_mut_ptr();
-
-        unsafe {
-            (from_raw_parts_mut(ptr.offset(i as isize), 1).get_mut(0).unwrap().downcast_mut().unwrap(),
-             from_raw_parts_mut(ptr.offset(i1 as isize), 1).get_mut(0).unwrap().downcast_mut().unwrap())
-        }
-    }
-
-    pub fn get_components3<T : Any, T1 : Any, T2 : Any>(&mut self) -> (&mut T, &mut T1, &mut T2) {
-        use std::slice::from_raw_parts_mut;
-
-        let i = self.type_id_mapping[&TypeId::of::<T>()];
-        let i1 = self.type_id_mapping[&TypeId::of::<T1>()];
-        let i2 = self.type_id_mapping[&TypeId::of::<T2>()];
-        let ptr = self.components.as_mut_ptr();
-
-        unsafe {
-            (from_raw_parts_mut(ptr.offset(i as isize), 1).get_mut(0).unwrap().downcast_mut().unwrap(),
-             from_raw_parts_mut(ptr.offset(i1 as isize), 1).get_mut(0).unwrap().downcast_mut().unwrap(),
-             from_raw_parts_mut(ptr.offset(i2 as isize), 1).get_mut(0).unwrap().downcast_mut().unwrap())
-        }
-    }
-
-    pub fn get_components_nomut3<T : Any, T1 : Any, T2 : Any>(&self) ->
-        (&T, &T1, &T2)
-    {
-        let i = self.type_id_mapping[&TypeId::of::<T>()];
-        let i1 = self.type_id_mapping[&TypeId::of::<T1>()];
-        let i2 = self.type_id_mapping[&TypeId::of::<T2>()];
-        let ptr = self.components.as_ptr();
-
-        unsafe {
-            ((*ptr.offset(i as isize)).downcast_ref().unwrap(),
-             (*ptr.offset(i1 as isize)).downcast_ref().unwrap(),
-             (*ptr.offset(i2 as isize)).downcast_ref().unwrap())
-        }
-    }
-
-
 }
+

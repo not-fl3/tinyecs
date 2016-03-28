@@ -1,15 +1,34 @@
 use entity::*;
-use world::WorldData;
+use world::{WorldData, EntityManager};
+use std::collections::HashSet;
 
 pub enum SomeData<'a> {
     None,
-    Entity(&'a mut Entity)
+    Entity(Vec<&'a mut Entity>)
 }
 impl<'b> SomeData<'b> {
     pub fn unwrap_entity<'a>(&'a mut self) -> &'a mut Entity {
         match self {
             &mut SomeData::None => panic!("not entity data"),
-            &mut SomeData::Entity(ref mut e) => e
+            &mut SomeData::Entity(ref mut e) => &mut e[0]
+        }
+    }
+
+    pub fn unwrap_all<'a>(&'a mut self) -> &'a mut Vec<&'b mut Entity> {
+        match *self {
+            SomeData::None => panic!("not entity data"),
+            SomeData::Entity(ref mut e) => e
+        }
+    }
+
+
+    pub fn new(entity_manager : &mut EntityManager, ids : &Vec<HashSet<i32>>) -> SomeData<'b> {
+        if ids.len() == 0 {
+            SomeData::None
+        } else if ids.len() == 1 {
+            SomeData::Entity(entity_manager.get_entities_by_ids(&ids[0]))
+        } else {
+            panic!("Atm only 1 pack of data entities supported");
         }
     }
 }

@@ -18,21 +18,24 @@ impl System for DrawerSystem {
     }
 
     fn process_one(&mut self, entity : &mut Entity) {
-        println!("{}", entity.get_component::<Position>().pos[0]);
+        let pos = entity.get_component_cell::<Position>();
+        println!("{}", pos.borrow().pos[0]);
     }
 }
 
 pub struct DeadDrawerSystem;
 impl System for DeadDrawerSystem {
     fn process_one(&mut self, entity : &mut Entity) {
-        println!("is dead {}", entity.get_component::<Position>().pos[0]);
+        let pos = entity.get_component_cell::<Position>();
+        println!("is dead {}", pos.borrow().pos[0]);
     }
 }
 
 pub struct MoverSystem;
 impl System for MoverSystem {
     fn process_one(&mut self, entity : &mut Entity) {
-        let t : &mut Position = entity.get_component::<Position>();
+        let pos = entity.get_component_cell::<Position>();
+        let mut t = pos.borrow_mut();
         t.pos[0] += 0.1;
         println!("Moved! {}", t.pos[0]);
     }

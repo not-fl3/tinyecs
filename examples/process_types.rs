@@ -27,11 +27,12 @@ pub struct RenderSystem;
 impl System for RenderSystem {
     fn process_d(&mut self, entity : &mut Entity, data : &mut SomeData) {
         let cam = data.unwrap_entity();
-        let cam = cam.get_component::<Camera>();
+        let cam = cam.get_component_cell::<Camera>();
 
-        let (_, mesh) = entity.get_components::<Position, Mesh>();
+        let pos = entity.get_component_cell::<Position>();
+        let mesh = entity.get_component_cell::<Mesh>();
 
-        println!("{}, seen from camera pos: {:?}", mesh.mesh, cam.pos);
+        println!("{}, seen from camera pos: {:?}", mesh.borrow().mesh, cam.borrow().pos);
     }
 }
 
@@ -49,11 +50,12 @@ impl System for DeferRenderSystem {
         });
         for entity in entities {
             let cam = data.unwrap_entity();
-            let cam = cam.get_component::<Camera>();
+            let cam = cam.get_component_cell::<Camera>();
+            let cam = cam.borrow();
 
-            let (_, mesh) = entity.get_components::<Position, Mesh>();
+            let mesh = entity.get_component_cell::<Mesh>();
 
-            println!("{}, seen from camera pos: {:?}", mesh.mesh, cam.pos);
+            println!("{}, seen from camera pos: {:?}", mesh.borrow().mesh, cam.pos);
         }
     }
 }

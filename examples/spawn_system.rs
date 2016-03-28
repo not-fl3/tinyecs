@@ -1,4 +1,4 @@
-extern crate tinyecs;
+#[macro_use] extern crate tinyecs;
 
 use tinyecs::*;
 
@@ -16,14 +16,14 @@ impl Component for SpawnPoint {}
 pub struct SpawnSystem;
 impl System for SpawnSystem {
     fn process_w(&mut self, entity : &mut Entity, world : &mut WorldData) {
-        let mut spawn_point = entity.get_component::<SpawnPoint>();
+        let mut spawn_point = entity.get_component_cell::<SpawnPoint>();
 
-        if spawn_point.count > 0 {
+        if spawn_point.borrow().count > 0 {
             let spawned = world.entity_manager.create_entity();
-            spawned.add_component(SomeComponent { some_data : spawn_point.data.to_string() });
+            spawned.add_component(SomeComponent { some_data : spawn_point.borrow().data.to_string() });
             spawned.refresh();
 
-            spawn_point.count -= 1;
+            spawn_point.borrow_mut().count -= 1;
         }
     }
 }
