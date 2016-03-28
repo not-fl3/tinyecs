@@ -20,13 +20,15 @@ pub struct BleedZoneSystem;
 impl System for BleedZoneSystem {
     fn process_one(&mut self, entity : &mut Entity) {
         let pos = entity.get_component_cell::<Position>();
+        let mut pos = pos.borrow_mut();
         let health = entity.get_component_cell::<Health>();
+        let mut health = health.borrow_mut();
 
-        if pos.borrow_mut().x == 5 {
-            health.borrow_mut().hp -= 10;
-            println!("You are in bleeding zone, hp: {}", health.borrow().hp);
+        if pos.x == 5 {
+            health.hp -= 10;
+            println!("You are in bleeding zone, hp: {}", health.hp);
         }
-        if health.borrow().hp <= 0 {
+        if health.hp <= 0 {
             entity.remove_component::<Alive>();
             entity.refresh();
         }
