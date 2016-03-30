@@ -4,24 +4,19 @@ use world::{WorldData, EntityManager};
 use std::collections::HashSet;
 
 #[macro_export]
-macro_rules! aspect_all {
-    ($a:ty) => {{ Aspect::all::<$a>() }};
-    ($a:ty, $b:ty) => {{ Aspect::all2::<$a, $b>() }};
-    ($a:ty, $b:ty,) => {{ Aspect::all2::<$a, $b>() }};
-    ($a:ty, $b:ty, $c:ty) => {{ Aspect::all3::<$a, $b, $c>() }};
-    ($a:ty, $b:ty, $c:ty,) => {{ Aspect::all3::<$a, $b, $c>() }};
-    ($a:ty, $b:ty, $c:ty, $d) => {{ Aspect::all4::<$a, $b, $c, $d>() }};
-    ($a:ty, $b:ty, $c:ty, $d,) => {{ Aspect::all4::<$a, $b, $c, $d>() }};
-    ($a:ty, $b:ty, $c:ty, $d, $e) => {{ Aspect::all5::<$a, $b, $c, $d, $e>() }};
-    ($a:ty, $b:ty, $c:ty, $d, $e,) => {{ Aspect::all5::<$a, $b, $c, $d, $e>() }};
-}
-#[macro_export]
 macro_rules! process_entities {
     ( ($name:ident): |$( $t:ty:  $varname:ident ), *| => $code:expr) => {
         struct $name;
         impl System for $name {
             fn aspect(&self) -> Aspect {
-                aspect_all!($( $t, )*)
+                let mut temp_vec = Vec::new();
+                $(
+                    temp_vec.push(TypeId::of::<$t>());
+                )*
+                Aspect {
+                    accept_types : temp_vec,
+                    not_accept_types : Vec::new()
+                }
             }
             fn process_one(&mut self, entity : &mut Entity) {
                 $( let mut $varname = entity.get_component::<$t>(); )*
