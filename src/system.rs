@@ -9,12 +9,8 @@ macro_rules! process_entities {
         struct $name;
         impl System for $name {
             fn aspect(&self) -> Aspect {
-                let mut temp_vec = Vec::new();
-                $(
-                    temp_vec.push(TypeId::of::<$t>());
-                )*
                 Aspect {
-                    accept_types : temp_vec,
+                    accept_types : vec!($(TypeId::of::<$t>()),*),
                     not_accept_types : Vec::new()
                 }
             }
