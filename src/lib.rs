@@ -1,4 +1,4 @@
-#![feature(time2)]
+#![feature(cell_extras)]
 
 mod entity;
 mod component;

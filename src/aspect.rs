@@ -7,8 +7,8 @@ pub struct Aspect {
 }
 impl Aspect {
     pub fn check(&self, entity : &Entity) -> bool {
-        self.accept_types.iter().all(|ty| { entity.components.contains_key(ty) }) &&
-            self.not_accept_types.iter().any(|ty| { entity.components.contains_key(ty) }) == false
+        self.accept_types.iter().all(|ty| { entity.components.borrow().contains_key(ty) }) &&
+            self.not_accept_types.iter().any(|ty| { entity.components.borrow().contains_key(ty) }) == false
     }
 }
 impl Aspect {
@@ -36,6 +36,17 @@ impl Aspect {
                 T3 : Any + Component>() -> Aspect {
         Aspect {
             accept_types : vec![TypeId::of::<T>(), TypeId::of::<T1>(), TypeId::of::<T2>(), TypeId::of::<T3>()],
+            not_accept_types : Vec::new()
+        }
+    }
+
+    pub fn all5<T : Any + Component,
+                T1 : Any + Component,
+                T2 : Any + Component,
+                T3 : Any + Component,
+                T4 : Any + Component>() -> Aspect {
+        Aspect {
+            accept_types : vec![TypeId::of::<T>(), TypeId::of::<T1>(), TypeId::of::<T2>(), TypeId::of::<T3>(), TypeId::of::<T4>()],
             not_accept_types : Vec::new()
         }
     }

@@ -15,15 +15,19 @@ impl Component for SpawnPoint {}
 
 pub struct SpawnSystem;
 impl System for SpawnSystem {
-    fn process_w(&mut self, entity : &mut Entity, world : &mut WorldData) {
-        let mut spawn_point = entity.get_component_cell::<SpawnPoint>();
+    fn aspect(&self) -> Aspect {
+        Aspect::all::<SpawnPoint>()
+    }
 
-        if spawn_point.borrow().count > 0 {
+    fn process_w(&mut self, entity : &mut Entity, world : &mut WorldData) {
+        let mut spawn_point = entity.get_component::<SpawnPoint>();
+
+        if spawn_point.count > 0 {
             let spawned = world.entity_manager.create_entity();
-            spawned.add_component(SomeComponent { some_data : spawn_point.borrow().data.to_string() });
+            spawned.add_component(SomeComponent { some_data : spawn_point.data.to_string() });
             spawned.refresh();
 
-            spawn_point.borrow_mut().count -= 1;
+            spawn_point.count -= 1;
         }
     }
 }
@@ -39,7 +43,7 @@ fn main() {
         entity.refresh();
     }
 
-    world.set_system(SpawnSystem, Aspect::all::<SpawnPoint>());
+    world.set_system(SpawnSystem);
 
     world.update();
     world.update();

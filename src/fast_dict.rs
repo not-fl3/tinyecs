@@ -126,8 +126,6 @@ impl<'a, T> Iterator for FastDictIter<'a, T> {
 fn test_insert() {
     use std::collections::HashSet;
 
-    println!("1b");
     let mut foo : FastDictionary<HashSet<i32>> = FastDictionary::new(0);
     foo.insert(0, HashSet::new());
-    println!("2");
 }

@@ -18,11 +18,13 @@ impl Component for Alive {}
 
 pub struct BleedZoneSystem;
 impl System for BleedZoneSystem {
+    fn aspect(&self) -> Aspect {
+        Aspect::all3::<Position, Health, Alive>()
+    }
+
     fn process_one(&mut self, entity : &mut Entity) {
-        let pos = entity.get_component_cell::<Position>();
-        let mut pos = pos.borrow_mut();
-        let health = entity.get_component_cell::<Health>();
-        let mut health = health.borrow_mut();
+        let pos = entity.get_component::<Position>();
+        let mut health = entity.get_component::<Health>();
 
         if pos.x == 5 {
             health.hp -= 10;
@@ -46,7 +48,7 @@ fn main() {
         entity.add_component(Alive);
         entity.refresh();
     }
-    world.set_system(BleedZoneSystem, Aspect::all3::<Position, Health, Alive>());
+    world.set_system(BleedZoneSystem);
 
     for _ in 0..100 {
         world.update();

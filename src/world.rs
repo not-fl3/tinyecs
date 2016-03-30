@@ -81,16 +81,11 @@ impl World {
                 entities : &mut self.entities
         }
     }
-    pub fn set_system<TSys>(&mut self, system : TSys, types : Aspect)
+    pub fn set_system<TSys>(&mut self, system : TSys)
         where TSys : 'static + System {
-        self.set_system_with_data(system, types, Vec::new());
-    }
+        let aspect = system.aspect();
+        let data_aspects = system.data_aspects();
 
-    pub fn set_system_with_data<TSys>(&mut self,
-                                      system : TSys,
-                                      types : Aspect,
-                                      data_aspects : Vec<Aspect>)
-        where TSys : 'static + System {
         let len = self.active_systems.vec.len();
         self.active_systems.insert(len,
                                    SelectedEntities {
@@ -98,9 +93,9 @@ impl World {
                                        data_set   : vec![HashSet::new(); data_aspects.len()]
                                    });
         let len = self.systems.vec.len();
-        self.systems.insert(len, SystemData::new(Box::new(system), types, data_aspects));
+        self.systems.insert(len, SystemData::new(Box::new(system), aspect, data_aspects));
         for e in self.entities.iter_mut() {
-            e.fresh = false;
+            *e.fresh.borrow_mut() = false;
         }
     }
 
@@ -118,7 +113,7 @@ impl World {
         self.update_time = Instant::now();
 
         for e in world_data.entity_manager.entities.iter_mut() {
-            if e.fresh == false {
+            if *e.fresh.borrow_mut() == false {
                 Self::refresh_entity(e, &mut self.systems, &mut self.active_systems);
             }
         }
