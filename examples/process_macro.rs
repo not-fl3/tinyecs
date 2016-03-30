@@ -12,7 +12,7 @@ struct Velocity {
 }
 impl Component for Velocity {}
 
-process_entities!((MoveSystem): |Position: pos, Velocity: vel| => {
+process_entities!((MoveSystem): |pos: Position, vel: Velocity| => {
     pos.x += vel.x;
     println!("Moving! position: {}, velocity: {}", pos.x, vel.x);
 });

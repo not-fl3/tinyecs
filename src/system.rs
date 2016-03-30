@@ -5,7 +5,7 @@ use std::collections::HashSet;
 
 #[macro_export]
 macro_rules! process_entities {
-    ( ($name:ident): |$( $t:ty:  $varname:ident ), *| => $code:expr) => {
+    ( ($name:ident): |$( $varname:ident: $t:ty ), *| => $code:expr) => {
         struct $name;
         impl System for $name {
             fn aspect(&self) -> Aspect {
