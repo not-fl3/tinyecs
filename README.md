@@ -10,6 +10,7 @@ struct Position {
     y : i32,
     z : i32
 }
+impl Component for Position {}
 ```
 impl Component for Position {}
 
