@@ -3,6 +3,25 @@ TinyECS
 
 Another Entity-Component-System, written in Rust.
 
+Usage
+-----
+
+Usage
+
+Add the following to the Cargo.toml in your project:
+```
+[dependencies]
+tinyecs = "*"
+```
+and import using: 
+```
+extern crate tinyecs;
+use tinyecs::*;
+```
+
+Features:
+--------
+
 - simple components createion:
 ```
 struct Position {
@@ -13,7 +32,7 @@ struct Position {
 impl Component for Position {}
 ```
 
-- simple entitys creation:
+- simple entities creation:
 
 ```
 let mut entity_manager = world.entity_manager();
