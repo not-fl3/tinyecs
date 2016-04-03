@@ -12,7 +12,6 @@ struct Position {
 }
 impl Component for Position {}
 ```
-impl Component for Position {}
 
 - simple entitys creation:
 
