@@ -1,6 +1,8 @@
 TinyECS
 =======
 
+[![Build Status](https://travis-ci.org/not-fl3/tinyecs.svg?branch=master)](https://travis-ci.org/not-fl3/tinyecs)
+
 Another Entity-Component-System, written in Rust.
 
 Usage
