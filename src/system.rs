@@ -40,19 +40,19 @@ macro_rules! impl_new {
 
 /// Create struct and impl System trait for it
 ///
-/// ```
+/// ```ignore
 /// register_system!((MoveSystem): |_pos: Position, _vel: Velocity| => {
 /// });
 /// ```
 ///
-/// ```
+/// ```ignore
 /// register_system!((AiSystem): |_bot: Bot, _pos: Position, _vel: Velocity|
 ///                 with (_players: aspect_all!(Player, Position),
 ///                       _targets: aspect_all!(SomeTarget, Position)) => {
 /// });
 /// ```
 ///
-/// ```
+/// ```ignore
 /// register_system!((BotControlSystem
 ///                   aspect aspect_all!(Position, Bot).except2::<Punch, Jump>()):
 ///                 |bot : Bot, pos : Position|

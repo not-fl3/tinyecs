@@ -9,7 +9,7 @@ Easy to use entity component system.
 
 All components must implement Component trait:
 
-```
+```ignore
 struct Position {
   x : i32
 }
@@ -19,7 +19,7 @@ impl Component for Position {}
 Entity can be created almost everywhere:
 
 
-```
+```ignore
 let entity = entity_manager.create_entity();
 
 entity.add_component(Position {x : 0, y : 0, z : 0});
@@ -30,7 +30,7 @@ entity.refresh();
 Simplest system can be created with macro.
 typically, you will need only process some components, like this:
 
-```
+```ignore
 process_entities!((MoveSystem): |pos: Position, vel: Velocity| => {
     pos.x += vel.x;
     println!("Moving! position: {}, velocity: {}", pos.x, vel.x);
@@ -39,13 +39,13 @@ process_entities!((MoveSystem): |pos: Position, vel: Velocity| => {
 
 This system now must be added to world like this: 
 
-```
+```ignore
 world.set_system(MoveSystem::new());
 ```
 
 this macro will be expanded to this:
 
-```
+```ignore
 pub struct MoveSystem;
 impl System for MoveSystem {
   fn aspect() -> Aspect {
