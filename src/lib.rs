@@ -62,7 +62,6 @@ impl System for MoveSystem {
 ```
 
 */
-#![feature(cell_extras)]
 
 mod entity;
 mod component;
