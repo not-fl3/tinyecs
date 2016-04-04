@@ -3,7 +3,7 @@
 use tinyecs::*;
 
 pub struct SomeComponent {
-    some_data : String
+    _some_data : String
 }
 impl Component for SomeComponent {}
 
@@ -19,12 +19,12 @@ impl System for SpawnSystem {
         Aspect::all::<SpawnPoint>()
     }
 
-    fn process_w(&mut self, entity : &mut Entity, world : &mut WorldData) {
+    fn process_w(&mut self, entity : &mut Entity, world : &mut WorldHandle) {
         let mut spawn_point = entity.get_component::<SpawnPoint>();
 
         if spawn_point.count > 0 {
             let spawned = world.entity_manager.create_entity();
-            spawned.add_component(SomeComponent { some_data : spawn_point.data.to_string() });
+            spawned.add_component(SomeComponent { _some_data : spawn_point.data.to_string() });
             spawned.refresh();
 
             spawn_point.count -= 1;

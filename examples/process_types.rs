@@ -31,7 +31,7 @@ impl System for RenderSystem {
     fn data_aspects(&self) -> Vec<Aspect> {
         vec![Aspect::all::<Camera>()]
     }
-    fn process_d(&mut self, entity : &mut Entity, data : &mut SomeData) {
+    fn process_d(&mut self, entity : &mut Entity, data : &mut DataList) {
         let cam = data.unwrap_entity();
         let cam = cam.get_component::<Camera>();
 
@@ -53,8 +53,8 @@ impl System for DeferRenderSystem {
     }
     fn process_all(&mut self,
                    entities : &mut Vec<&mut Entity>,
-                   _   : &mut WorldData,
-                   data   : &mut SomeData) {
+                   _   : &mut WorldHandle,
+                   data   : &mut DataList) {
         entities.sort_by(|e1, e2| {
             let defer1 = e1.get_component::<DeferMesh>();
             let defer2 = e2.get_component::<DeferMesh>();

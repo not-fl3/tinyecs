@@ -8,13 +8,14 @@ pub use aspect::*;
 
 use fast_dict::*;
 
-pub type EntityIdSet = HashSet<i32>;
+type EntityIdSet = HashSet<i32>;
 
-pub struct SystemData {
+struct SystemData {
     pub system       : Box<System>,
     pub aspect       : Aspect,
     pub data_aspects : Vec<Aspect>
 }
+
 impl SystemData {
     pub fn new(system : Box<System>, aspect : Aspect, data_aspects : Vec<Aspect>) -> SystemData {
         SystemData {
@@ -24,16 +25,17 @@ impl SystemData {
         }
     }
 }
-pub struct SelectedEntities {
+struct SelectedEntities {
     pub entity_set    : EntityIdSet,
     pub data_set      : Vec<EntityIdSet>
 }
+
 pub struct World {
-    pub entities       : FastDictionary<Entity>,
-    pub systems        : FastDictionary<SystemData>,
-    pub active_systems : FastDictionary<SelectedEntities>,
-    update_time        : Instant,
-    last_id            : i32
+    entities        : FastDictionary<Entity>,
+    systems         : FastDictionary<SystemData>,
+    active_systems  : FastDictionary<SelectedEntities>,
+    update_time     : Instant,
+    last_id         : i32
 }
 
 pub struct EntityManager<'a> {
@@ -59,12 +61,16 @@ impl<'a> EntityManager<'a> {
     }
 }
 
-pub struct WorldData<'a> {
+/// World handle, that will be accesible in system's process
+pub struct WorldHandle<'a> {
+    /// Delta from last world tick.
     pub delta          : f32,
+    /// Entity manager with access to all worlds entities
     pub entity_manager : EntityManager<'a>
 }
 
 impl World {
+    /// Constructs new Entity World.
     pub fn new() -> World {
         World {
             last_id        : 0,
@@ -75,12 +81,27 @@ impl World {
         }
     }
 
+    /// Get entity manager for manupalating with entities.
+    ///
+    /// # Examples
+    /// ```
+    /// use tinyecs::*;
+    /// let mut world = World::new();
+    ///
+    /// {
+    ///   let mut entity_manager = world.entity_manager();
+    ///   let _entity = entity_manager.create_entity();
+    ///   // _entity.add_component(); or something
+    /// }
+    /// ```
     pub fn entity_manager<'a>(&'a mut self) -> EntityManager<'a> {
         EntityManager {
                 last_id  : &mut self.last_id,
                 entities : &mut self.entities
         }
     }
+
+    /// Add new active system.
     pub fn set_system<TSys>(&mut self, system : TSys)
         where TSys : 'static + System {
         let aspect = system.aspect();
@@ -99,10 +120,12 @@ impl World {
         }
     }
 
+    /// Tick all systems in world.
+    /// All on_added and on_removed will passed inside this method.
     pub fn update(&mut self) {
         let delta = self.update_time.elapsed();
         let float_delta = delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1000000000.0;
-        let mut world_data = WorldData {
+        let mut world_data = WorldHandle {
             delta    : float_delta,
             entity_manager : EntityManager {
                 last_id  : &mut self.last_id,
@@ -133,7 +156,7 @@ impl World {
 
                 if system.data_aspects.len() == 0 || (entities.data_set.len() != 0 &&
                                                       entities.data_set[0].len() != 0) {
-                    let mut some_data = SomeData::new(&mut world_data.entity_manager,
+                    let mut some_data = DataList::new(&mut world_data.entity_manager,
                                                       &entities.data_set);
                     system.system.process_all(&mut refs, &mut world_data, &mut some_data);
                 }

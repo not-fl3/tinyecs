@@ -1,9 +1,11 @@
 use std::ptr;
 use std::slice::*;
 
+/// May be replaced by vect_map
 pub struct FastDictionary<T> {
     pub vec : Vec<Option<T>>
 }
+#[allow(dead_code)]
 impl<T> FastDictionary<T> {
     pub fn new(max_index : i32) -> FastDictionary<T> {
         FastDictionary {

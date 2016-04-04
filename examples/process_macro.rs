@@ -12,10 +12,33 @@ struct Velocity {
 }
 impl Component for Velocity {}
 
-process_entities!((MoveSystem): |pos: Position, vel: Velocity| => {
-    pos.x += vel.x;
-    println!("Moving! position: {}, velocity: {}", pos.x, vel.x);
+struct Player;
+impl Component for Player {}
+
+struct Bot;
+impl Component for Bot {}
+
+struct SomeTarget;
+impl Component for SomeTarget {}
+
+register_system!((MoveSystem): |_pos: Position, _vel: Velocity| => {
+    _pos.x += _vel.x;
+    println!("Moving! position: {}, velocity: {}", _pos.x, _vel.x);
 });
+
+register_system!((AiSystem): |_bot: Bot, _pos: Position, _vel: Velocity|
+                 with (_players: aspect_all!(Player, Position),
+                       _targets: aspect_all!(SomeTarget, Position)) => {
+    _pos.x += _vel.x;
+    for target in _targets {
+        let Position {x, ..} = *target.get_component::<Position>();
+        if _pos.x >= x {
+            println!("Maybe attack this target?");
+        }
+    }
+    println!("Moving! position: {}, velocity: {}", _pos.x, _vel.x);
+});
+
 
 fn main() {
     let mut world = World::new();

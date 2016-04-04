@@ -1,5 +1,6 @@
 use component::*;
 use entity::*;
+use std::any::{Any, TypeId};
 
 pub struct Aspect {
     pub accept_types     : Vec<TypeId>,
@@ -11,6 +12,18 @@ impl Aspect {
             self.not_accept_types.iter().any(|ty| { entity.components.borrow().contains_key(ty) }) == false
     }
 }
+
+#[macro_export]
+macro_rules! aspect_all{( $ ($aspect:ty), * ) => {
+    {
+        use std::any::TypeId;
+        Aspect {
+            accept_types : vec![$( TypeId::of::<$aspect>() ),*],
+            not_accept_types : Vec::new()
+        }
+    }
+}}
+
 impl Aspect {
     pub fn all<T : Any + Component>() -> Aspect {
         Aspect {

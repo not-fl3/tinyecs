@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut, Drop};
-pub use std::any::{Any, TypeId};
+use std::any::{Any, TypeId};
 
 use std::cell::RefCell;
 use component::*;
@@ -11,6 +11,7 @@ pub struct Entity {
     pub fresh              : RefCell<bool>
 }
 
+#[doc(hidden)]
 pub struct ComponentGuard<'a, T : Any> {
     component  : Option<Box<T>>,
     collection : &'a RefCell<HashMap<TypeId, Box<Any>>>
@@ -43,6 +44,9 @@ impl Entity {
             fresh              : RefCell::new(false)
         }
     }
+
+    /// Mark this entity as not refreshed.
+    /// On beginning of next frame new registered components will affect their systems.
     pub fn refresh(&self) {
         *self.fresh.borrow_mut() = false;
     }
@@ -50,6 +54,8 @@ impl Entity {
         self.components.borrow_mut().insert(TypeId::of::<T>(), Box::new(component));
     }
 
+    /// Remove component of given type from entity
+    /// Be carefull, if this component is borrowed at this moment, it will not be really deleted.
     pub fn remove_component<T : Any>(&self) {
         self.components.borrow_mut().remove(&TypeId::of::<T>());
     }
@@ -68,9 +74,11 @@ impl Entity {
         }
     }
 
+    #[doc(hidden)]
     pub fn get_components<T : Any + Component, T1 : Any + Component>(&self) -> (ComponentGuard<T>, ComponentGuard<T1>) {
         (self.get_component::<T>(), self.get_component::<T1>())
     }
+    #[doc(hidden)]
     pub fn get_components3<T : Any + Component, T1 : Any + Component, T2 : Any + Component>(&self) -> (ComponentGuard<T>, ComponentGuard<T1>, ComponentGuard<T2>) {
         (self.get_component::<T>(), self.get_component::<T1>(), self.get_component::<T2>())
     }
