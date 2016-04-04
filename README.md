@@ -87,3 +87,6 @@ More features, described only in /examples atm:
 - Entity creation from system's process
 - Data aspects - for additional kind of entities in process
 - Different process styles
+
+
+[Online documentation](http://not-fl3.github.io/tinyecs/tinyecs/)
