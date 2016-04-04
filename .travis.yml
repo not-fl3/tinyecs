@@ -8,7 +8,7 @@ addons:
     - libdw-dev
     - binutils-dev
 rust:
-- nightly
+- stable
 # - beta
 # - stable
 # - 1.7.0
@@ -18,7 +18,7 @@ before_script:
   export PATH=$HOME/.local/bin:$PATH
 script:
 - |
-  travis-cargo build --features nightly &&
+  travis-cargo build &&
   travis-cargo test &&
   travis-cargo bench &&
   travis-cargo --only stable doc
