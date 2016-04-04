@@ -19,10 +19,14 @@ extern crate tinyecs;
 use tinyecs::*;
 ```
 
-Features:
+Overview:
 --------
 
-- simple components createion:
+  - Entity is set of components identified by unique ID.
+  - Component is struct with data.
+  - System is behaviour working with components.
+
+- components:
 ```
 struct Position {
     x : i32,
@@ -32,7 +36,7 @@ struct Position {
 impl Component for Position {}
 ```
 
-- simple entities creation:
+- entities:
 
 ```
 let mut entity_manager = world.entity_manager();
@@ -43,7 +47,7 @@ entity.add_component(Velocity {x : 1});
 entity.refresh();
 ```
 
-- simple macro for systems creation:
+- systems:
 ```
 process_entities!((MoveSystem): |pos: Position, vel: Velocity| => {
     pos.x += vel.x;
@@ -56,7 +60,7 @@ process_entities!((MoveSystem): |pos: Position, vel: Velocity| => {
 pub struct MoverSystem;
 impl System for MoverSystem {
     fn aspect(&self) -> Aspect {
-        aspect_all![Position, Dead]
+        aspect_all![Position, Velocity]
     }
 
     fn process_one(&mut self, entity : &mut Entity) {
@@ -68,5 +72,8 @@ impl System for MoverSystem {
 }
 ```
 
-
-More examples in /examples folder :)
+More features, described only in /examples atm:
+- Aspects
+- Entity creation from system's process
+- Data aspects - for additional kind of entities in process
+- Different process styles
