@@ -19,8 +19,16 @@ extern crate tinyecs;
 use tinyecs::*;
 ```
 
-Overview:
---------
+# Why another ecs? 
+
+ - mutliple mutable components access
+ - no boilerplate for entity and systems creation/accessing
+ - no restrictions on component content - non-copyable non-clonable structs is OK
+ - entity creation possible alomst everywhere
+ - data aspects - possibility to view some additional entities while processing 
+
+
+# Overview:
 
   - Entity is set of components identified by unique ID.
   - Component is struct with data.
@@ -36,7 +44,7 @@ struct Position {
 impl Component for Position {}
 ```
 
-- entities:
+Entities:
 
 ```
 let mut entity_manager = world.entity_manager();
@@ -47,7 +55,7 @@ entity.add_component(Velocity {x : 1});
 entity.refresh();
 ```
 
-- systems:
+Systems:
 ```
 process_entities!((MoveSystem): |pos: Position, vel: Velocity| => {
     pos.x += vel.x;
@@ -55,7 +63,7 @@ process_entities!((MoveSystem): |pos: Position, vel: Velocity| => {
 });
 ```
 
-- or without macroses:
+Or without macroses:
 ```
 pub struct MoverSystem;
 impl System for MoverSystem {
