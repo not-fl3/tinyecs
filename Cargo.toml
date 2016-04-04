@@ -6,3 +6,6 @@ keywords = ["ecs","entity-system"]
 authors = ["not.fl3@gmail.com"]
 license = "MIT"
 version = "0.0.1"
+
+[dependencies]
+time = "0.1"

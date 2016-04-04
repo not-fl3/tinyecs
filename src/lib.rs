@@ -63,6 +63,8 @@ impl System for MoveSystem {
 
 */
 
+extern crate time;
+
 mod entity;
 mod component;
 mod world;

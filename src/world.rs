@@ -1,5 +1,5 @@
 use std::collections::{HashSet};
-use std::time::Instant;
+use time::PreciseTime;
 
 pub use entity::*;
 pub use component::*;
@@ -34,7 +34,7 @@ pub struct World {
     entities        : FastDictionary<Entity>,
     systems         : FastDictionary<SystemData>,
     active_systems  : FastDictionary<SelectedEntities>,
-    update_time     : Instant,
+    update_time     : PreciseTime,
     last_id         : i32
 }
 
@@ -75,7 +75,7 @@ impl World {
     pub fn new() -> World {
         World {
             last_id        : 0,
-            update_time    : Instant::now(),
+            update_time    : PreciseTime::now(),
             entities       : FastDictionary::new(0),
             systems        : FastDictionary::new(0),
             active_systems : FastDictionary::new(0)
@@ -124,8 +124,8 @@ impl World {
     /// Tick all systems in world.
     /// All on_added and on_removed will passed inside this method.
     pub fn update(&mut self) {
-        let delta = self.update_time.elapsed();
-        let float_delta = delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1000000000.0;
+        let delta = self.update_time.to(PreciseTime::now());
+        let float_delta = delta.num_seconds() as f32 + delta.num_milliseconds() as f32 / 1000.0;
         let mut world_data = WorldHandle {
             delta    : float_delta,
             entity_manager : EntityManager {
@@ -134,7 +134,7 @@ impl World {
             }
         };
 
-        self.update_time = Instant::now();
+        self.update_time = PreciseTime::now();
 
         for e in world_data.entity_manager.entities.iter_mut() {
             if *e.fresh.borrow_mut() == false {
