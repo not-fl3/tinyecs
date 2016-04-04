@@ -9,9 +9,9 @@ addons:
     - binutils-dev
 rust:
 - nightly
-- beta
-- stable
-- 1.7.0
+# - beta
+# - stable
+# - 1.7.0
 before_script:
 - |
   pip install 'travis-cargo<0.2' --user &&
@@ -27,6 +27,6 @@ after_success:
 - travis-cargo coveralls --no-sudo --verify
 env:
   global:
-  - TRAVIS_CARGO_NIGHTLY_FEATURE=nightly
+  - TRAVIS_CARGO_NIGHTLY_FEATURE=""
   - secure: '...'
   - secure: medqeiHVdoJTK5IVaT8XVbw9JaxKY4Tz6qaZqDIEkEo2U2ks/n6dv3dtSnDGiF4UGhYel/9j+q1uBB8KhFJqaBfpO/6EE6FD5vonrrfiJd/D8z3xwYeWMUA/vgURzLvxw4ts6CNFUwTk36VNuKZESXv2eTytBH15Ho0INh5J8SLsuJn0Yx+MWq5aqMunMEnAvKFvF7zaOG+EvU8GbW01pdbqH+ZW3a0eVsCb1VKgz1TkzP8S+//c0IYgS4R6hhyYLSN7zXKEnFRZ5ox+HGbwtePHOLbnt1owzltdNjwEiMJaI60m/vhP+kasc9l55xNCMtN0XQCYrpUhfnptgtilnFpbn4IEWzeT/f22uMCfPbFFKkskztGzSsPCSTGVZ8YbJ2YEEwXFC7ZA/gQtkD3o+P5cy1sKuCnzHAPTlPIKFlAi4cucImMFUuIF2PcUciQiofRUyso2TuJmkXHumzcgwMFrQw7yE45+93b1cKvia2sAhxorMEtzdAn259XwAqhAv8MDnfl1NvGY0prFZX+vXHzl9A8U2FOd07Rre/Hbg+eccGSOI0evjX1VDJuyqneL0pgDvONJVIPZpMl24ufA0xFnBX8o964rxsch1aNCGCBpGgVz7l6YsdViq98hwH8SYEvckqoDxMCmWr0MMFYu0HtnDiWnAHdyGqE3Ij8y88A=
