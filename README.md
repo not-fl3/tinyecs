@@ -35,7 +35,7 @@ use tinyecs::*;
   - System is behaviour working with components.
 
 - components:
-```
+```rust
 struct Position {
     x : i32,
     y : i32,
@@ -46,7 +46,7 @@ impl Component for Position {}
 
 Entities:
 
-```
+```rust
 let mut entity_manager = world.entity_manager();
 let entity = entity_manager.create_entity();
 
@@ -56,7 +56,7 @@ entity.refresh();
 ```
 
 Systems:
-```
+```rust
 process_entities!((MoveSystem): |pos: Position, vel: Velocity| => {
     pos.x += vel.x;
     println!("Moving! position: {}, velocity: {}", pos.x, vel.x);
@@ -64,7 +64,7 @@ process_entities!((MoveSystem): |pos: Position, vel: Velocity| => {
 ```
 
 Or without macroses:
-```
+```rust
 pub struct MoverSystem;
 impl System for MoverSystem {
     fn aspect(&self) -> Aspect {
