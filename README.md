@@ -3,8 +3,39 @@ TinyECS
 
 Another Entity-Component-System, written in Rust.
 
-- simple components createion:
+Usage
+-----
+
+Usage
+
+Add the following to the Cargo.toml in your project:
 ```
+[dependencies]
+tinyecs = "*"
+```
+and import using: 
+```
+extern crate tinyecs;
+use tinyecs::*;
+```
+
+# Why another ecs? 
+
+ - mutliple mutable components access
+ - no boilerplate for entity and systems creation/accessing
+ - no restrictions on component content - non-copyable non-clonable structs is OK
+ - entity creation possible alomst everywhere
+ - data aspects - possibility to view some additional entities while processing 
+
+
+# Overview:
+
+  - Entity is set of components identified by unique ID.
+  - Component is struct with data.
+  - System is behaviour working with components.
+
+- components:
+```rust
 struct Position {
     x : i32,
     y : i32,
@@ -13,9 +44,9 @@ struct Position {
 impl Component for Position {}
 ```
 
-- simple entities creation:
+Entities:
 
-```
+```rust
 let mut entity_manager = world.entity_manager();
 let entity = entity_manager.create_entity();
 
@@ -24,20 +55,20 @@ entity.add_component(Velocity {x : 1});
 entity.refresh();
 ```
 
-- simple macro for systems creation:
-```
+Systems:
+```rust
 process_entities!((MoveSystem): |pos: Position, vel: Velocity| => {
     pos.x += vel.x;
     println!("Moving! position: {}, velocity: {}", pos.x, vel.x);
 });
 ```
 
-- or without macroses:
-```
+Or without macroses:
+```rust
 pub struct MoverSystem;
 impl System for MoverSystem {
     fn aspect(&self) -> Aspect {
-        aspect_all![Position, Dead]
+        aspect_all![Position, Velocity]
     }
 
     fn process_one(&mut self, entity : &mut Entity) {
@@ -49,5 +80,8 @@ impl System for MoverSystem {
 }
 ```
 
-
-More examples in /examples folder :)
+More features, described only in /examples atm:
+- Aspects
+- Entity creation from system's process
+- Data aspects - for additional kind of entities in process
+- Different process styles
