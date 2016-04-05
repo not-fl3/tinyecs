@@ -38,6 +38,7 @@ pub struct World {
     last_id         : i32
 }
 
+/// part of the world, manipulating entities
 pub struct EntityManager<'a> {
     entities : &'a mut FastDictionary<Entity>,
     last_id  : &'a mut i32

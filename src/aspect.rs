@@ -2,6 +2,7 @@ use component::*;
 use entity::*;
 use std::any::{Any, TypeId};
 
+/// data for systems, storing which components they should be intrested in
 pub struct Aspect {
     pub accept_types     : Vec<TypeId>,
     pub not_accept_types : Vec<TypeId>
@@ -13,6 +14,7 @@ impl Aspect {
     }
 }
 
+/// make aspect for all of this types
 #[macro_export]
 macro_rules! aspect_all{( $ ($aspect:ty), * ) => {
     {

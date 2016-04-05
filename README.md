@@ -10,10 +10,10 @@ struct Position {
     y : i32,
     z : i32
 }
-```
 impl Component for Position {}
+```
 
-- simple entitys creation:
+- simple entities creation:
 
 ```
 let mut entity_manager = world.entity_manager();

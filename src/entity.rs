@@ -11,7 +11,6 @@ pub struct Entity {
     pub fresh              : RefCell<bool>
 }
 
-#[doc(hidden)]
 pub struct ComponentGuard<'a, T : Any> {
     component  : Option<Box<T>>,
     collection : &'a RefCell<HashMap<TypeId, Box<Any>>>
@@ -64,6 +63,8 @@ impl Entity {
         self.components.borrow().contains_key(&TypeId::of::<T>())
     }
 
+    /// Move component from entity to CompoentGuard. In general case, it behaves like &mut T.
+    /// While component is borrowed, second get_component() with same type will cause panic
     pub fn get_component<T : Any + Component>(&self) -> ComponentGuard<T> {
         let component = self.components.borrow_mut().remove(&TypeId::of::<T>()).unwrap();
         let c : Box<T> = component.downcast().unwrap();

@@ -1,3 +1,8 @@
 [package]
 name = "tinyecs"
+description = "Tiny entity component system"
+repository = "https://github.com/not-fl3/tinyecs.git"
+keywords = ["ecs","entity-system"]
+authors = ["not.fl3@gmail.com"]
+license = "MIT"
 version = "0.0.1"

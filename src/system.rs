@@ -3,6 +3,7 @@ use aspect::Aspect;
 use world::{WorldHandle, EntityManager};
 use std::collections::HashSet;
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! impl_aspect {
     ( $( $t:ty ),* ) => {
@@ -16,6 +17,7 @@ macro_rules! impl_aspect {
     }
 }
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! impl_data_aspect {
     ( $( $dataaspect:expr ),* ) => {
@@ -24,6 +26,7 @@ macro_rules! impl_data_aspect {
         }
     }
 }
+#[doc(hidden)]
 #[macro_export]
 macro_rules! impl_new {
     ($name:ident) => {
@@ -34,6 +37,30 @@ macro_rules! impl_new {
         }
     }
 }
+
+/// Create struct and impl System trait for it
+///
+/// ```
+/// register_system!((MoveSystem): |_pos: Position, _vel: Velocity| => {
+/// });
+/// ```
+///
+/// ```
+/// register_system!((AiSystem): |_bot: Bot, _pos: Position, _vel: Velocity|
+///                 with (_players: aspect_all!(Player, Position),
+///                       _targets: aspect_all!(SomeTarget, Position)) => {
+/// });
+/// ```
+///
+/// ```
+/// register_system!((BotControlSystem
+///                   aspect aspect_all!(Position, Bot).except2::<Punch, Jump>()):
+///                 |bot : Bot, pos : Position|
+///                 with (scores: aspect_all!(ScoreTarget, Position),
+///                       players: aspect_all!(Player, Position),
+///                       objects: aspect_all!(ScoreObject, RigidBody)) => {
+/// });
+/// ```
 #[macro_export]
 macro_rules! register_system {
     ( ($name:ident aspect $aspect:expr): $entity:ident |$( $varname:ident: $t:ty ), *| with ($( $datavar:ident: $dataaspect:expr ), *) => $code:expr) => {
@@ -84,6 +111,9 @@ macro_rules! register_system {
     };
 }
 
+/// list with additional entitiy packs from data aspect
+///
+/// Strongly recommends not use this ever, only for macroses!
 pub struct DataList<'a> {
     data : Vec<Vec<&'a mut Entity>>
 }
@@ -109,8 +139,17 @@ impl<'b> DataList<'b> {
     }
 }
 
+/// System trait
+///
+/// You can implement one of those processes, but if you implement process_all - only it will be called, and if you dont implement process_all - all process_* will be called.
+///
+/// Most common case - implement only process_one.
 pub trait System {
+    /// System will subscribe only on components, sutisfied by this aspect.
     fn aspect(&self) -> Aspect;
+
+    /// For each returned aspect, one additional entity pack DataList will be received.
+    /// Strongly recomends use it only with registration macro.
     fn data_aspects(&self) -> Vec<Aspect> {
         Vec::new()
     }
