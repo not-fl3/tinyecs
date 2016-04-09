@@ -111,6 +111,33 @@ macro_rules! register_system {
     };
 }
 
+/// Usefull when you have one component, and want to have another, built on given one.
+/// Like this:
+///
+/// ```ignore
+/// transit_system!(Glutin2HeavySystem: RenderData => HeavyGuiData,
+///    |render_data| { HeavyGuiData::new(&mut render_data.facade.borrow_mut() ) });
+/// ```
+/// With this system, HeavyGuiData will automatically be added to entities with RenderData.
+#[macro_export]
+macro_rules! transit_system {
+    ($name:ident: $from:ty => $to:ty, |$var:ident| $how:expr) => {
+        pub struct $name;
+        impl_new!($name);
+        impl System for $name {
+            fn aspect(&self) -> Aspect {
+                aspect_all!($from).except::<$to>()
+            }
+
+            fn process_one(&mut self, entity : &mut Entity) {
+                let $var = entity.get_component::<$from>();
+                entity.add_component($how);
+                entity.refresh();
+            }
+        }
+    };
+}
+
 /// list with additional entitiy packs from data aspect
 ///
 /// Strongly recommends not use this ever, only for macroses!
@@ -118,9 +145,15 @@ pub struct DataList<'a> {
     data : Vec<Vec<&'a mut Entity>>
 }
 impl<'b> DataList<'b> {
-    pub fn unwrap_entity<'a>(&'a mut self) -> &'a mut Entity {
-        &mut self.data[0][0]
+    pub fn unwrap_entity<'a>(&'a self) -> &'a Entity {
+        &self.data[0][0]
+    }
 
+    pub fn unwrap_entity_nth<'a>(&'a self, n : usize) -> &'a Entity {
+        &self.data[n][0]
+    }
+    pub fn unwrap_entity_mut<'a>(&'a mut self) -> &'a mut Entity {
+        &mut self.data[0][0]
     }
 
     pub fn unwrap_all<'a>(&'a mut self) -> &'a mut Vec<&'b mut Entity> {
@@ -129,6 +162,9 @@ impl<'b> DataList<'b> {
 
     pub fn unwrap_nth<'a>(&'a self, n : usize) -> &'a Vec<&'b mut Entity> {
         &self.data[n]
+    }
+    pub fn unwrap_mut_nth<'a>(&'a mut self, n : usize) -> &'a mut Vec<&'b mut Entity> {
+        &mut self.data[n]
     }
 
 
@@ -152,6 +188,20 @@ pub trait System {
     /// Strongly recomends use it only with registration macro.
     fn data_aspects(&self) -> Vec<Aspect> {
         Vec::new()
+    }
+
+    #[cfg(feature = "prof")]
+    fn get_name(&self) -> String {
+        use std::intrinsics::*;
+        let type_name =
+            unsafe {
+                type_name::<Self>()
+            };
+        type_name.to_string()
+
+    }
+    fn on_created(&mut self, _ : &mut EntityManager) {
+
     }
     fn on_begin_frame(&mut self) {
     }
@@ -188,4 +238,3 @@ pub trait System {
         }
     }
 }
-

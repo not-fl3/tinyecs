@@ -2,10 +2,15 @@
 name = "tinyecs"
 description = "Tiny entity component system"
 repository = "https://github.com/not-fl3/tinyecs.git"
+documentation = "http://not-fl3.github.io/tinyecs/tinyecs/"
 keywords = ["ecs","entity-system"]
 authors = ["not.fl3@gmail.com"]
 license = "MIT"
-version = "0.0.1"
+version = "0.0.3"
+
+[features]
+prof = []
 
 [dependencies]
 time = "0.1"
+tinyprof = "0.0.1"

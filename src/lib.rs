@@ -37,7 +37,7 @@ process_entities!((MoveSystem): |pos: Position, vel: Velocity| => {
 });
 ```
 
-This system now must be added to world like this: 
+This system now must be added to world like this:
 
 ```ignore
 world.set_system(MoveSystem::new());
@@ -62,6 +62,13 @@ impl System for MoveSystem {
 ```
 
 */
+#![cfg_attr(feature = "prof", feature(core_intrinsics))]
+
+#[cfg(feature = "prof")]
+#[macro_use] extern crate tinyprof;
+
+#[cfg(not(feature = "prof"))]
+macro_rules! profile_region { ($name:expr) => {    } }
 
 extern crate time;
 
@@ -73,4 +80,3 @@ mod aspect;
 mod fast_dict;
 
 pub use world::*;
-

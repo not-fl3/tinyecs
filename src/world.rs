@@ -103,7 +103,7 @@ impl World {
     }
 
     /// Add new active system.
-    pub fn set_system<TSys>(&mut self, system : TSys)
+    pub fn set_system<TSys>(&mut self, mut system : TSys)
         where TSys : 'static + System {
         let aspect = system.aspect();
         let data_aspects = system.data_aspects();
@@ -115,6 +115,12 @@ impl World {
                                        data_set   : vec![HashSet::new(); data_aspects.len()]
                                    });
         let len = self.systems.vec.len();
+
+        system.on_created(&mut EntityManager {
+            last_id  : &mut self.last_id,
+            entities : &mut self.entities
+        });
+
         self.systems.insert(len, SystemData::new(Box::new(system), aspect, data_aspects));
         for e in self.entities.iter_mut() {
             *e.fresh.borrow_mut() = false;
@@ -136,40 +142,57 @@ impl World {
 
         self.update_time = PreciseTime::now();
 
-        for e in world_data.entity_manager.entities.iter_mut() {
-            if *e.fresh.borrow_mut() == false {
+        {
+            profile_region!("refresh entities");
+            for e in world_data.entity_manager.entities.iter_mut().filter(|e| {*e.fresh.borrow_mut() == false}) {
                 Self::refresh_entity(e, &mut self.systems, &mut self.active_systems);
             }
         }
 
-        for (i, ref entities) in self.active_systems.iter().enumerate() {
-            if entities.entity_set.len() != 0 {
-                let mut system = &mut self.systems.get_mut(i as usize).unwrap().system;
-                (**system).on_begin_frame();
+        {
+            profile_region!("all begin frames");
+            for (i, ref entities) in self.active_systems.iter().enumerate() {
+                if entities.entity_set.len() != 0 {
+                    let mut system = &mut self.systems.get_mut(i as usize).unwrap().system;
+                    profile_region!(&format!("on_begin_frame: {}", system.get_name()));
+                    (**system).on_begin_frame();
+                }
             }
         }
+        {
+            profile_region!("all updates");
+            for (i, ref entities) in self.active_systems.iter().enumerate() {
+                if entities.entity_set.len() != 0 {
+                    let mut refs = world_data.entity_manager.get_entities_by_ids(&entities.entity_set);
 
-        for (i, ref entities) in self.active_systems.iter().enumerate() {
-            if entities.entity_set.len() != 0 {
-                let mut refs = world_data.entity_manager.get_entities_by_ids(&entities.entity_set);
+                    let mut system = &mut self.systems.get_mut(i as usize).unwrap();
 
-                let mut system = &mut self.systems.get_mut(i as usize).unwrap();
+                    {
+                        profile_region!(&system.system.get_name());
+                        if system.data_aspects.len() == 0 || (entities.data_set.len() != 0 &&
+                                                              entities.data_set[0].len() != 0) {
+                            let mut some_data = DataList::new(&mut world_data.entity_manager,
+                                                              &entities.data_set);
+                            system.system.process_all(&mut refs, &mut world_data, &mut some_data);
+                        }
+                    }
+                }
+            }
+        }
+        {
+            profile_region!("all end frames");
+            for (i, ref entities) in self.active_systems.iter().enumerate() {
+                if entities.entity_set.len() != 0 {
+                    let mut system = &mut self.systems.get_mut(i as usize).unwrap().system;
 
-                if system.data_aspects.len() == 0 || (entities.data_set.len() != 0 &&
-                                                      entities.data_set[0].len() != 0) {
-                    let mut some_data = DataList::new(&mut world_data.entity_manager,
-                                                      &entities.data_set);
-                    system.system.process_all(&mut refs, &mut world_data, &mut some_data);
+                    {
+                        profile_region!(&format!("end_frame: {}", system.get_name()));
+                        (**system).on_end_frame();
+                    }
                 }
             }
         }
 
-        for (i, ref entities) in self.active_systems.iter().enumerate() {
-            if entities.entity_set.len() != 0 {
-                let mut system = &mut self.systems.get_mut(i as usize).unwrap().system;
-                (**system).on_end_frame();
-            }
-        }
     }
 
     fn refresh_entity(e : &mut Entity,
@@ -184,11 +207,15 @@ impl World {
 
             if aspect.check(e) {
                 if entities.entity_set.contains(&entity_id) == false {
+                    profile_region!(&format!("on_added: {}", system.get_name()));
+
                     entities.entity_set.insert(entity_id);
                     system.on_added(e);
                 }
             } else {
                 if entities.entity_set.contains(&entity_id) {
+                    profile_region!(&format!("on_removed: {}", system.get_name()));
+
                     entities.entity_set.remove(&entity_id);
                     system.on_removed(e);
                 }
@@ -211,8 +238,8 @@ impl World {
                 }
             }
         }
+
+        *e.fresh.borrow_mut() = true;
     }
 
 }
-
-

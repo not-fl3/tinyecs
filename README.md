@@ -14,20 +14,22 @@ Add the following to the Cargo.toml in your project:
 ```
 [dependencies]
 tinyecs = "*"
+# features = ["prof"] <- for monitoring each system performance, but working only on nightly rust
+
 ```
-and import using: 
+and import using:
 ```
 extern crate tinyecs;
 use tinyecs::*;
 ```
 
-# Why another ecs? 
+# Why another ecs?
 
  - mutliple mutable components access
  - no boilerplate for entity and systems creation/accessing
  - no restrictions on component content - non-copyable non-clonable structs is OK
- - entity creation possible alomst everywhere
- - data aspects - possibility to view some additional entities while processing 
+ - entity creation possible almost everywhere
+ - data aspects - possibility to view some additional entities while processing
 
 
 # Overview:
