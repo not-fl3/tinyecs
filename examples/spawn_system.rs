@@ -2,6 +2,9 @@
 
 use tinyecs::*;
 
+pub struct Position;
+impl Component for Position {}
+
 pub struct SomeComponent {
     _some_data : String
 }
@@ -16,7 +19,7 @@ impl Component for SpawnPoint {}
 pub struct SpawnSystem;
 impl System for SpawnSystem {
     fn aspect(&self) -> Aspect {
-        Aspect::all::<SpawnPoint>()
+        aspect_all!(SpawnPoint, Position)
     }
 
     fn process_w(&mut self, entity : &mut Entity, world : &mut WorldHandle) {
@@ -40,6 +43,7 @@ fn main() {
         let entity = w.create_entity();
 
         entity.add_component(SpawnPoint {data : "player", count : 5});
+        entity.add_component(Position);
         entity.refresh();
     }
 

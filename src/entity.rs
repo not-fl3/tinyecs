@@ -31,7 +31,7 @@ impl<'a, T : Any> Drop for ComponentGuard<'a, T> {
     fn drop(&mut self) {
         self.component.take().and_then(|component| {
             self.collection.borrow_mut().insert(TypeId::of::<T>(), component)
-        });
+        });        
     }
 }
 

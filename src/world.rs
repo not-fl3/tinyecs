@@ -1,4 +1,5 @@
 use std::collections::{HashSet};
+use std::thread;
 use time::PreciseTime;
 
 pub use entity::*;
@@ -32,8 +33,7 @@ struct SelectedEntities {
 
 pub struct World {
     entities        : FastDictionary<Entity>,
-    systems         : FastDictionary<SystemData>,
-    active_systems  : FastDictionary<SelectedEntities>,
+    systems         : FastDictionary<(SystemData, SelectedEntities)>,
     update_time     : PreciseTime,
     last_id         : i32
 }
@@ -78,7 +78,6 @@ impl World {
             update_time    : PreciseTime::now(),
             entities       : FastDictionary::new(0),
             systems        : FastDictionary::new(0),
-            active_systems : FastDictionary::new(0)
         }
     }
 
@@ -102,29 +101,30 @@ impl World {
         }
     }
 
-    /// Add new active system.
-    pub fn set_system<TSys>(&mut self, mut system : TSys)
+    pub fn set_parallel_system<TSys>(&mut self, mut system : TSys, _ : i32)
         where TSys : 'static + System {
         let aspect = system.aspect();
         let data_aspects = system.data_aspects();
-
-        let len = self.active_systems.vec.len();
-        self.active_systems.insert(len,
-                                   SelectedEntities {
-                                       entity_set : HashSet::new(),
-                                       data_set   : vec![HashSet::new(); data_aspects.len()]
-                                   });
-        let len = self.systems.vec.len();
 
         system.on_created(&mut EntityManager {
             last_id  : &mut self.last_id,
             entities : &mut self.entities
         });
 
-        self.systems.insert(len, SystemData::new(Box::new(system), aspect, data_aspects));
+        let len = self.systems.vec.len();
+        self.systems.insert(len, (SystemData::new(Box::new(system), aspect, data_aspects),
+                                    SelectedEntities {
+                                       entity_set : HashSet::new(),
+                                       data_set   : vec![HashSet::new(); 0]
+                                    }));
         for e in self.entities.iter_mut() {
             *e.fresh.borrow_mut() = false;
         }
+    }
+    /// Add new active system.
+    pub fn set_system<TSys>(&mut self, system : TSys)
+        where TSys : 'static + System {
+        self.set_parallel_system(system, 0);
     }
 
     /// Tick all systems in world.
@@ -145,27 +145,24 @@ impl World {
         {
             profile_region!("refresh entities");
             for e in world_data.entity_manager.entities.iter_mut().filter(|e| {*e.fresh.borrow_mut() == false}) {
-                Self::refresh_entity(e, &mut self.systems, &mut self.active_systems);
+                Self::refresh_entity(e, &mut self.systems);
             }
         }
 
         {
             profile_region!("all begin frames");
-            for (i, ref entities) in self.active_systems.iter().enumerate() {
+            for &mut (ref mut system, ref entities) in self.systems.iter_mut() {
                 if entities.entity_set.len() != 0 {
-                    let mut system = &mut self.systems.get_mut(i as usize).unwrap().system;
                     profile_region!(&format!("on_begin_frame: {}", system.get_name()));
-                    (**system).on_begin_frame();
+                    (*system.system).on_begin_frame();
                 }
             }
         }
         {
             profile_region!("all updates");
-            for (i, ref entities) in self.active_systems.iter().enumerate() {
+            for &mut (ref mut system, ref mut entities) in self.systems.iter_mut() {
                 if entities.entity_set.len() != 0 {
                     let mut refs = world_data.entity_manager.get_entities_by_ids(&entities.entity_set);
-
-                    let mut system = &mut self.systems.get_mut(i as usize).unwrap();
 
                     {
                         profile_region!(&system.system.get_name());
@@ -173,38 +170,28 @@ impl World {
                                                               entities.data_set[0].len() != 0) {
                             let mut some_data = DataList::new(&mut world_data.entity_manager,
                                                               &entities.data_set);
-                            system.system.process_all(&mut refs, &mut world_data, &mut some_data);
+                            (*system.system).process_all(&mut refs, &mut world_data, &mut some_data);                            
                         }
                     }
                 }
             }
         }
+
         {
             profile_region!("all end frames");
-            for (i, ref entities) in self.active_systems.iter().enumerate() {
+            for &mut(ref mut system, ref entities) in self.systems.iter_mut() {
                 if entities.entity_set.len() != 0 {
-                    let mut system = &mut self.systems.get_mut(i as usize).unwrap().system;
-
-                    {
-                        profile_region!(&format!("end_frame: {}", system.get_name()));
-                        (**system).on_end_frame();
-                    }
+                    profile_region!(&format!("end_frame: {}", system.get_name()));
+                    (*system.system).on_end_frame();
                 }
             }
         }
-
     }
 
     fn refresh_entity(e : &mut Entity,
-                      systems : &mut FastDictionary<SystemData>,
-                      active_systems : &mut FastDictionary<SelectedEntities>) {
+                      systems : &mut FastDictionary<(SystemData, SelectedEntities)>) {
         let entity_id = e.id;
-
-        for (i, &mut SystemData { ref mut system, ref aspect, ref data_aspects }) in
-            systems.iter_mut().enumerate()
-        {
-            let entities = active_systems.get_mut(i).unwrap();
-
+        for & mut(SystemData { ref mut system, ref mut aspect, ref mut data_aspects }, ref mut entities) in systems.iter_mut() {
             if aspect.check(e) {
                 if entities.entity_set.contains(&entity_id) == false {
                     profile_region!(&format!("on_added: {}", system.get_name()));
