@@ -138,6 +138,49 @@ macro_rules! transit_system {
     };
 }
 
+#[macro_export]
+macro_rules! transit_with_data_system {
+    ($name:ident: $from:ty => $to:ty, ($( $datavar:ident: $datatype:ty ), *), |$var:ident, ($( $evar:ident: $etype:ty ), *)| $how:expr) => {
+        pub struct $name;
+        impl_new!($name);
+        impl System for $name {
+            fn aspect(&self) -> Aspect {
+                aspect_all!($from).except::<$to>()
+            }
+            fn data_aspects(&self) -> Vec<Aspect> {
+                vec![$(aspect_all!($datatype),)*]
+            }
+            fn process_d(&mut self, entity : &mut Entity, data : &mut DataList) {
+                let $var = entity.get_component::<$from>();
+                $( let mut $evar = entity.get_component::<$etype>(); )*
+                $( let mut $datavar = data.unwrap_entity().get_component::<$datatype>(); )*
+
+                entity.add_component($how);
+                entity.refresh();
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! transit_sync_system {
+    ($name:ident: $from:ty => $to:ty, |$var:ident| $how:expr) => {
+        pub struct $name;
+        impl_new!($name);
+        impl System for $name {
+            fn aspect(&self) -> Aspect {
+                aspect_all!($from).except::<$to>()
+            }
+
+            fn process_one(&mut self, entity : &mut Entity) {
+                let $var = entity.read_sync_component::<$from>();
+                entity.add_component($how);
+                entity.refresh();
+            }
+        }
+    };
+}
+
 /// list with additional entitiy packs from data aspect
 ///
 /// Strongly recommends not use this ever, only for macroses!
@@ -168,14 +211,14 @@ impl<'b> DataList<'b> {
     }
 
 
-    pub fn new(entity_manager : &mut EntityManager, ids : &Vec<HashSet<i32>>) -> DataList<'b> {
+    pub fn new(entity_manager : &mut EntityManager<'b>, ids : &Vec<HashSet<i32>>) -> DataList<'b> {
         DataList {
             data : ids.iter().map(|i| {entity_manager.get_entities_by_ids(&i)}).collect()
         }
     }
 }
 
-/// System trait
+/// System traits
 ///
 /// You can implement one of those processes, but if you implement process_all - only it will be called, and if you dont implement process_all - all process_* will be called.
 ///
@@ -193,6 +236,7 @@ pub trait System {
     #[cfg(feature = "prof")]
     fn get_name(&self) -> String {
         use std::intrinsics::*;
+
         let type_name =
             unsafe {
                 type_name::<Self>()

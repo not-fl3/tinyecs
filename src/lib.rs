@@ -71,12 +71,12 @@ impl System for MoveSystem {
 macro_rules! profile_region { ($name:expr) => {    } }
 
 extern crate time;
+extern crate vec_map;
 
 mod entity;
 mod component;
 mod world;
 mod system;
 mod aspect;
-mod fast_dict;
 
 pub use world::*;

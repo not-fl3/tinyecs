@@ -1,7 +1,6 @@
-extern crate tinyecs;
+#[macro_use] extern crate tinyecs;
 
 use tinyecs::*;
-
 
 struct Health {
     hp : i32
@@ -19,7 +18,7 @@ impl Component for Alive {}
 pub struct BleedZoneSystem;
 impl System for BleedZoneSystem {
     fn aspect(&self) -> Aspect {
-        Aspect::all3::<Position, Health, Alive>()
+        aspect_all![Position, Health, Alive]
     }
 
     fn process_one(&mut self, entity : &mut Entity) {

@@ -9,8 +9,8 @@ pub struct Aspect {
 }
 impl Aspect {
     pub fn check(&self, entity : &Entity) -> bool {
-        self.accept_types.iter().all(|ty| { entity.components.borrow().contains_key(ty) }) &&
-            self.not_accept_types.iter().any(|ty| { entity.components.borrow().contains_key(ty) }) == false
+        self.accept_types.iter().all(|ty| { entity.components.borrow().keys().any(|t| t == ty )}) &&
+            self.not_accept_types.iter().any(|ty| { entity.components.borrow().keys().any(|t| t == ty) }) == false
     }
 }
 

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut, Drop};
 use std::any::{Any, TypeId};
 
@@ -6,9 +6,10 @@ use std::cell::RefCell;
 use component::*;
 
 pub struct Entity {
-    pub id                 : i32,
-    pub components         : RefCell<HashMap<TypeId, Box<Any>>>,
-    pub fresh              : RefCell<bool>
+    pub id                       : i32,
+    pub components               : RefCell<HashMap<TypeId, Box<Any>>>,
+    pub removed_components       : RefCell<HashSet<TypeId>>,
+    fresh                        : RefCell<bool>
 }
 
 pub struct ComponentGuard<'a, T : Any> {
@@ -31,16 +32,17 @@ impl<'a, T : Any> Drop for ComponentGuard<'a, T> {
     fn drop(&mut self) {
         self.component.take().and_then(|component| {
             self.collection.borrow_mut().insert(TypeId::of::<T>(), component)
-        });        
+        });
     }
 }
 
 impl Entity {
-    pub fn new(id : i32) -> Entity {
+    pub fn new(id  : i32) -> Entity {
         Entity {
-            id                 : id,
-            components         : RefCell::new(HashMap::new()),
-            fresh              : RefCell::new(false)
+            id                      : id,
+            components              : RefCell::new(HashMap::new()),
+            removed_components      : RefCell::new(HashSet::new()),
+            fresh                   : RefCell::new(false)
         }
     }
 
@@ -49,6 +51,14 @@ impl Entity {
     pub fn refresh(&self) {
         *self.fresh.borrow_mut() = false;
     }
+
+    pub fn set_fresh(&self) {
+        *self.fresh.borrow_mut() = true;
+    }
+
+    pub fn is_fresh(&self) -> bool {
+        *self.fresh.borrow() == true
+    }
     pub fn add_component<T : Any + Component>(&self, component : T) {
         self.components.borrow_mut().insert(TypeId::of::<T>(), Box::new(component));
     }
@@ -56,7 +66,9 @@ impl Entity {
     /// Remove component of given type from entity
     /// Be carefull, if this component is borrowed at this moment, it will not be really deleted.
     pub fn remove_component<T : Any>(&self) {
-        self.components.borrow_mut().remove(&TypeId::of::<T>());
+        if self.removed_components.borrow_mut().insert(TypeId::of::<T>()) == false {
+            panic!("Removing of removed components");
+        }
     }
 
     pub fn has_component<T : Any>(&self) -> bool {
@@ -85,41 +97,3 @@ impl Entity {
     }
 }
 
-#[test]
-fn get_component_test() {
-    use world::World;
-    struct Position {x : i32};
-    impl Component for Position{}
-    let mut world = World::new();
-    let eid = {
-        let mut entity_manager = world.entity_manager();
-        let entity = entity_manager.create_entity();
-        {
-            entity.add_component(Position {x : 2});
-            entity.refresh();
-        }
-        entity.id
-    };
-    world.update();
-    {
-        let mut entity_manager = world.entity_manager();
-        let entity = entity_manager.try_get_entity(eid).unwrap();
-        let mut some = entity.get_component::<Position>();
-        entity.refresh();
-        some.x += 1;
-    }
-    {
-        let mut entity_manager = world.entity_manager();
-        let entity = entity_manager.try_get_entity(eid).unwrap();
-
-        entity.remove_component::<Position>();
-        entity.refresh();
-    }
-    world.update();
-    {
-        let mut entity_manager = world.entity_manager();
-        let entity = entity_manager.try_get_entity(eid).unwrap();
-        assert_eq!(entity.has_component::<Position>(), false);
-    }
-
-}

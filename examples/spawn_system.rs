@@ -23,15 +23,19 @@ impl System for SpawnSystem {
     }
 
     fn process_w(&mut self, entity : &mut Entity, world : &mut WorldHandle) {
-        let mut spawn_point = entity.get_component::<SpawnPoint>();
+        {
+            let mut spawn_point = entity.get_component::<SpawnPoint>();
 
-        if spawn_point.count > 0 {
-            let spawned = world.entity_manager.create_entity();
-            spawned.add_component(SomeComponent { _some_data : spawn_point.data.to_string() });
-            spawned.refresh();
+            if spawn_point.count > 0 {
+                let spawned = world.entity_manager.create_entity();
+                spawned.add_component(SomeComponent { _some_data : spawn_point.data.to_string() });
+                spawned.refresh();
 
-            spawn_point.count -= 1;
+                spawn_point.count -= 1;
+            }
         }
+        entity.remove_component::<SpawnPoint>();
+        entity.refresh();
     }
 }
 
@@ -49,6 +53,16 @@ fn main() {
 
     world.set_system(SpawnSystem);
 
+    world.update();
+    world.update();
+    world.update();
+    world.update();
+    world.update();
+    world.update();
+    world.update();
+    world.update();
+    world.update();
+    world.update();
     world.update();
     world.update();
 }

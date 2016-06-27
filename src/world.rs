@@ -1,13 +1,12 @@
-use std::collections::{HashSet};
-use std::thread;
+use std::collections::HashSet;
 use time::PreciseTime;
+use vec_map::VecMap;
+
 
 pub use entity::*;
 pub use component::*;
 pub use system::*;
 pub use aspect::*;
-
-use fast_dict::*;
 
 type EntityIdSet = HashSet<i32>;
 
@@ -32,32 +31,47 @@ struct SelectedEntities {
 }
 
 pub struct World {
-    entities        : FastDictionary<Entity>,
-    systems         : FastDictionary<(SystemData, SelectedEntities)>,
-    update_time     : PreciseTime,
-    last_id         : i32
+    entities         : VecMap<Entity>,
+    systems          : Vec<(SystemData, SelectedEntities)>,
+    update_time      : PreciseTime,
+    last_id          : i32,
 }
 
 /// part of the world, manipulating entities
 pub struct EntityManager<'a> {
-    entities : &'a mut FastDictionary<Entity>,
-    last_id  : &'a mut i32
+    entities          : &'a mut VecMap<Entity>,
+    last_id           : &'a mut i32
 }
 impl<'a> EntityManager<'a> {
-    pub fn create_entity(&mut self) -> &mut Entity {
-        (*self.last_id) += 1;
-        let e = Entity::new(*self.last_id);
-        self.entities.insert(*self.last_id as usize, e);
+    pub fn create_entity_with_id(&mut self, id : i32) -> &mut Entity {
+        (*self.last_id) = id;
+
+        let e = Entity::new(id);
+
+        let old = self.entities.insert(id as usize, e);
+        if let Some(_) = old {
+            panic!("inserting to existing id");
+        }
+
         self.entities.get_mut(*self.last_id as usize).unwrap()
     }
+
+    pub fn create_entity(&mut self) -> &mut Entity {
+        *self.last_id += 1;
+        let id = self.last_id.clone();
+        self.create_entity_with_id(id)
+    }
+
     pub fn try_get_entity(&mut self, id : i32) -> Option<&mut Entity> {
        self.entities.get_mut(id as usize)
     }
 
-    pub fn get_entities_by_ids<'b>(&mut self, ids : &HashSet<i32>) -> Vec<&'b mut Entity> {
+    pub fn get_entities_by_ids(&mut self, ids : &HashSet<i32>) -> Vec<&'a mut Entity> {
         ids.iter().map(|id| {
-            let id = (*id).clone();
-            self.entities.get_mut_no_check(id as isize)
+            let e : &mut Entity = self.entities.get_mut(*id as usize).unwrap();
+            unsafe {
+                ::std::mem::transmute(e)
+            }
         }).collect::<Vec<_>>()
     }
 }
@@ -71,20 +85,19 @@ pub struct WorldHandle<'a> {
 }
 
 impl World {
-    /// Constructs new Entity World.
     pub fn new() -> World {
         World {
-            last_id        : 0,
-            update_time    : PreciseTime::now(),
-            entities       : FastDictionary::new(0),
-            systems        : FastDictionary::new(0),
+            last_id          : 0,
+            update_time      : PreciseTime::now(),
+            entities         : VecMap::with_capacity(3000),
+            systems          : Vec::new()
         }
     }
 
     /// Get entity manager for manupalating with entities.
     ///
     /// # Examples
-    /// ```
+    /// ```ignore
     /// use tinyecs::*;
     /// let mut world = World::new();
     ///
@@ -101,30 +114,24 @@ impl World {
         }
     }
 
-    pub fn set_parallel_system<TSys>(&mut self, mut system : TSys, _ : i32)
+    /// Add new active system.
+    pub fn set_system<TSys>(&mut self, mut system : TSys)
         where TSys : 'static + System {
         let aspect = system.aspect();
         let data_aspects = system.data_aspects();
 
         system.on_created(&mut EntityManager {
-            last_id  : &mut self.last_id,
-            entities : &mut self.entities
+            last_id          : &mut self.last_id,
+            entities         : &mut self.entities
         });
-
-        let len = self.systems.vec.len();
-        self.systems.insert(len, (SystemData::new(Box::new(system), aspect, data_aspects),
-                                    SelectedEntities {
-                                       entity_set : HashSet::new(),
-                                       data_set   : vec![HashSet::new(); 0]
-                                    }));
-        for e in self.entities.iter_mut() {
-            *e.fresh.borrow_mut() = false;
+        self.systems.push((SystemData::new(Box::new(system), aspect, data_aspects),
+                                        SelectedEntities {
+                                            entity_set : HashSet::new(),
+                                            data_set   : vec![HashSet::new(); 0]
+                                        }));
+        for (_, e) in self.entities.iter_mut() {
+            e.set_fresh();
         }
-    }
-    /// Add new active system.
-    pub fn set_system<TSys>(&mut self, system : TSys)
-        where TSys : 'static + System {
-        self.set_parallel_system(system, 0);
     }
 
     /// Tick all systems in world.
@@ -132,45 +139,51 @@ impl World {
     pub fn update(&mut self) {
         let delta = self.update_time.to(PreciseTime::now());
         let float_delta = delta.num_seconds() as f32 + delta.num_milliseconds() as f32 / 1000.0;
-        let mut world_data = WorldHandle {
-            delta    : float_delta,
-            entity_manager : EntityManager {
-                last_id  : &mut self.last_id,
-                entities : &mut self.entities
-            }
-        };
 
         self.update_time = PreciseTime::now();
 
+        let mut systems = &mut self.systems;
+
         {
             profile_region!("refresh entities");
-            for e in world_data.entity_manager.entities.iter_mut().filter(|e| {*e.fresh.borrow_mut() == false}) {
-                Self::refresh_entity(e, &mut self.systems);
+            for (_, e) in self.entities.iter_mut() {
+                //.filter(|&(_, ref e)| {*e.fresh.borrow_mut() == false})
+                Self::refresh_entity(e, systems);
+                e.set_fresh();
             }
         }
 
+        let mut world_data = WorldHandle {
+            delta    : float_delta,
+            entity_manager   : EntityManager {
+                last_id      : &mut self.last_id,
+                entities     : &mut self.entities
+            }
+        };
+
+
         {
             profile_region!("all begin frames");
-            for &mut (ref mut system, ref entities) in self.systems.iter_mut() {
+            for &mut (ref mut system, ref entities) in systems.iter_mut() {
                 if entities.entity_set.len() != 0 {
-                    profile_region!(&format!("on_begin_frame: {}", system.get_name()));
+                    profile_region!(&format!("on_begin_frame: {}", system.system.get_name()));
                     (*system.system).on_begin_frame();
                 }
             }
         }
         {
             profile_region!("all updates");
-            for &mut (ref mut system, ref mut entities) in self.systems.iter_mut() {
+            for &mut (ref mut system, ref mut entities) in systems.iter_mut() {
                 if entities.entity_set.len() != 0 {
                     let mut refs = world_data.entity_manager.get_entities_by_ids(&entities.entity_set);
 
                     {
                         profile_region!(&system.system.get_name());
-                        if system.data_aspects.len() == 0 || (entities.data_set.len() != 0 &&
-                                                              entities.data_set[0].len() != 0) {
-                            let mut some_data = DataList::new(&mut world_data.entity_manager,
-                                                              &entities.data_set);
-                            (*system.system).process_all(&mut refs, &mut world_data, &mut some_data);                            
+                        if system.data_aspects.len() == 0 ||
+                            (entities.data_set.len() != 0 &&
+                             entities.data_set[0].len() != 0) {
+                            let mut some_data = DataList::new(&mut world_data.entity_manager, &entities.data_set);
+                            (*system.system).process_all(&mut refs, &mut world_data, &mut some_data);
                         }
                     }
                 }
@@ -179,31 +192,39 @@ impl World {
 
         {
             profile_region!("all end frames");
-            for &mut(ref mut system, ref entities) in self.systems.iter_mut() {
+            for &mut(ref mut system, ref entities) in systems.iter_mut() {
                 if entities.entity_set.len() != 0 {
-                    profile_region!(&format!("end_frame: {}", system.get_name()));
+                    profile_region!(&format!("end_frame: {}", system.system.get_name()));
                     (*system.system).on_end_frame();
                 }
             }
         }
+
     }
 
     fn refresh_entity(e : &mut Entity,
-                      systems : &mut FastDictionary<(SystemData, SelectedEntities)>) {
-        let entity_id = e.id;
+                      systems : &mut Vec<(SystemData, SelectedEntities)>) {
+        {
+            let mut deleted = e.removed_components.borrow_mut();
+            let mut components = e.components.borrow_mut();
+
+            for del in deleted.drain() {
+                components.remove(&del);
+            }
+        }
+
         for & mut(SystemData { ref mut system, ref mut aspect, ref mut data_aspects }, ref mut entities) in systems.iter_mut() {
             if aspect.check(e) {
-                if entities.entity_set.contains(&entity_id) == false {
+                if entities.entity_set.contains(&e.id) == false {
                     profile_region!(&format!("on_added: {}", system.get_name()));
 
-                    entities.entity_set.insert(entity_id);
+                    entities.entity_set.insert(e.id);
                     system.on_added(e);
                 }
             } else {
-                if entities.entity_set.contains(&entity_id) {
+                if entities.entity_set.contains(&e.id) {
                     profile_region!(&format!("on_removed: {}", system.get_name()));
-
-                    entities.entity_set.remove(&entity_id);
+                    entities.entity_set.remove(&e.id);
                     system.on_removed(e);
                 }
             }
@@ -215,18 +236,17 @@ impl World {
                 zip(entities.data_set.iter_mut())
             {
                 if data_aspect.check(e) {
-                    if entities.contains(&entity_id) == false {
-                        entities.insert(entity_id);
+                    if entities.contains(&e.id) == false {
+                        entities.insert(e.id);
                     }
                 } else {
-                    if entities.contains(&entity_id) {
-                        entities.remove(&entity_id);
+                    if entities.contains(&e.id) {
+                        entities.remove(&e.id);
                     }
                 }
             }
         }
 
-        *e.fresh.borrow_mut() = true;
     }
 
 }
