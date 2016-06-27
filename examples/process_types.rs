@@ -26,7 +26,7 @@ pub struct RenderSystem;
 
 impl System for RenderSystem {
     fn aspect(&self) -> Aspect {
-        Aspect::all2::<Position, Mesh>()
+        aspect_all![Position, Mesh]
     }
     fn data_aspects(&self) -> Vec<Aspect> {
         vec![Aspect::all::<Camera>()]
@@ -46,10 +46,10 @@ pub struct DeferRenderSystem;
 
 impl System for DeferRenderSystem {
     fn aspect(&self) -> Aspect {
-        Aspect::all2::<Position, Mesh>()
+        aspect_all![Position, Mesh]
     }
     fn data_aspects(&self) -> Vec<Aspect> {
-        vec![Aspect::all::<Camera>()]
+        vec![aspect_all![Camera]]
     }
     fn process_all(&mut self,
                    entities : &mut Vec<&mut Entity>,

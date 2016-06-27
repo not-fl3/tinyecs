@@ -13,5 +13,5 @@ prof = []
 
 [dependencies]
 time = "0.1"
-tinyprof = { path = "../tinyprof" }
+tinyprof = "0.0.1"
 vec_map = "0.6.0"

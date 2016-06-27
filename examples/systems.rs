@@ -14,7 +14,7 @@ impl Component for Position {}
 pub struct DrawerSystem;
 impl System for DrawerSystem {
     fn aspect(&self) -> Aspect {
-        Aspect::all::<Position>()
+        aspect_all![Position]
     }
 
     fn on_added(&mut self, entity : &mut Entity) {
@@ -30,7 +30,7 @@ impl System for DrawerSystem {
 pub struct DeadDrawerSystem;
 impl System for DeadDrawerSystem {
     fn aspect(&self) -> Aspect {
-        Aspect::all::<Position>().except::<Dead>()
+        aspect_all![Position].except::<Dead>()
     }
     fn process_one(&mut self, entity : &mut Entity) {
         let pos = entity.get_component::<Position>();
@@ -41,7 +41,7 @@ impl System for DeadDrawerSystem {
 pub struct MoverSystem;
 impl System for MoverSystem {
     fn aspect(&self) -> Aspect {
-        Aspect::all2::<Position, Dead>()
+        aspect_all![Position, Dead]
     }
 
     fn process_one(&mut self, entity : &mut Entity) {
