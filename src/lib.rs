@@ -70,6 +70,9 @@ impl System for MoveSystem {
 #[cfg(not(feature = "prof"))]
 macro_rules! profile_region { ($name:expr) => {    } }
 
+#[cfg(feature = "serialization")]
+extern crate toml;
+
 extern crate time;
 extern crate vec_map;
 
@@ -79,4 +82,9 @@ mod world;
 mod system;
 mod aspect;
 
+#[cfg(feature = "serialization")]
+mod serialization;
+
 pub use world::*;
+#[cfg(feature = "serialization")]
+pub use serialization::*;

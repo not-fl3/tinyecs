@@ -130,7 +130,7 @@ impl World {
                                             data_set   : vec![HashSet::new(); 0]
                                         }));
         for (_, e) in self.entities.iter_mut() {
-            e.set_fresh();
+            e.refresh();
         }
     }
 
@@ -146,8 +146,7 @@ impl World {
 
         {
             profile_region!("refresh entities");
-            for (_, e) in self.entities.iter_mut() {
-                //.filter(|&(_, ref e)| {*e.fresh.borrow_mut() == false})
+            for (_, e) in self.entities.iter_mut().filter(|&(_, ref e)| {e.is_fresh() == false}) {
                 Self::refresh_entity(e, systems);
                 e.set_fresh();
             }
