@@ -28,7 +28,7 @@ impl<T : Component + Decodable,
     fn visit(&self, entity : &Entity, source : &BTreeMap<String, Value>) {
         if let Some(value) = source.get(&self.name) {
             let c = decode::<T>(value.clone());
-            match c { 
+            match c {
                 Some(component) => entity.add_component(component),
                 None => println!("{} deserialization failed", self.name)
             }
@@ -68,11 +68,11 @@ impl<T : Component + Decodable,
 #[macro_export]
 macro_rules! deserializers {
     ($t:ty) => {
-        DeserializersStorage::new(stringify!($t).to_string(), PhantomData::<$t>)
+        DeserializersStorage::new(stringify!($t).to_string(), ::std::marker::PhantomData::<$t>)
     };
     ($t1:ty, $($t:ty),+) => {
         {
-            let deserializers = DeserializersStorage::new(stringify!($t1).to_string(), PhantomData::<$t1>);
+            let deserializers = DeserializersStorage::new(stringify!($t1).to_string(), ::std::marker::PhantomData::<$t1>);
             $(
                 let deserializers = deserializers.add::<$t>(stringify!($t).to_string());
             )+

@@ -2,8 +2,6 @@
 extern crate toml;
 extern crate rustc_serialize;
 
-use std::marker::PhantomData;
-
 use tinyecs::*;
 
 #[derive(RustcDecodable)]
