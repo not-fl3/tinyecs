@@ -4,10 +4,7 @@ use entity::*;
 use component::*;
 
 use toml::*;
-
-pub trait Deserializable {
-    fn deserialize(&Value) -> Self;
-}
+use rustc_serialize::Decodable;
 
 pub trait Deserializers {
     fn visit(&self, &Entity, toml : &BTreeMap<String, Value>);
@@ -18,7 +15,7 @@ pub trait Deserializers {
     }
 }
 
-pub struct DeserializersStorage<T : Component + Deserializable,
+pub struct DeserializersStorage<T : Component + Decodable,
                             U : Deserializers> {
     name : String,
     marker : PhantomData<T>,
@@ -26,12 +23,15 @@ pub struct DeserializersStorage<T : Component + Deserializable,
 }
 
 
-impl<T : Component + Deserializable,
+impl<T : Component + Decodable,
      U : Deserializers> Deserializers for DeserializersStorage<T, U> {
     fn visit(&self, entity : &Entity, source : &BTreeMap<String, Value>) {
         if let Some(value) = source.get(&self.name) {
-            let c : T = Deserializable::deserialize(value);
-            entity.add_component(c);
+            let c = decode::<T>(value.clone());
+            match c { 
+                Some(component) => entity.add_component(component),
+                None => println!("{} deserialization failed", self.name)
+            }
         }
         self.next.visit(entity, source);
     }
@@ -42,7 +42,7 @@ impl Deserializers for () {
     }
 }
 
-impl<T : Component + Deserializable> DeserializersStorage<T, ()> {
+impl<T : Component + Decodable> DeserializersStorage<T, ()> {
     pub fn new(name : String, _ : PhantomData<T>) ->
         DeserializersStorage<T, ()> {
             DeserializersStorage {
@@ -53,9 +53,9 @@ impl<T : Component + Deserializable> DeserializersStorage<T, ()> {
         }
 }
 
-impl<T : Component + Deserializable,
+impl<T : Component + Decodable,
      U : Deserializers> DeserializersStorage<T, U> {
-    pub fn add<T1 : Component + Deserializable>(self, name : String) ->
+    pub fn add<T1 : Component + Decodable>(self, name : String) ->
         DeserializersStorage<T1, DeserializersStorage<T, U>> {
             DeserializersStorage {
                 name : name,

@@ -72,6 +72,8 @@ macro_rules! profile_region { ($name:expr) => {    } }
 
 #[cfg(feature = "serialization")]
 extern crate toml;
+#[cfg(feature = "serialization")] 
+extern crate rustc_serialize;
 
 extern crate time;
 extern crate vec_map;

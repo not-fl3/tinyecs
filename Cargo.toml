@@ -10,7 +10,7 @@ version = "0.0.5"
 
 [features]
 prof = []
-serialization = ["toml"]
+serialization = ["toml", "rustc-serialize"]
 default = ["serialization"]
 
 [dependencies]
@@ -18,3 +18,4 @@ time = "0.1"
 tinyprof = "0.0.1"
 vec_map = "0.6.0"
 toml = { version = "0.1", optional = true }
+rustc-serialize = { version = "0.3", optional = true }
