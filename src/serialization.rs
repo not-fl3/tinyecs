@@ -16,7 +16,7 @@ pub trait Deserializers {
 }
 
 pub struct DeserializersStorage<T : Component + Decodable,
-                            U : Deserializers> {
+                                U : Deserializers> {
     name : String,
     marker : PhantomData<T>,
     next : U

@@ -5,7 +5,8 @@ use std::any::{Any, TypeId};
 /// data for systems, storing which components they should be intrested in
 pub struct Aspect {
     pub accept_types     : Vec<TypeId>,
-    pub not_accept_types : Vec<TypeId>
+    pub not_accept_types : Vec<TypeId>,
+    pub optional         : bool
 }
 impl Aspect {
     pub fn check(&self, entity : &Entity) -> bool {
@@ -18,10 +19,13 @@ impl Aspect {
 #[macro_export]
 macro_rules! aspect_all{( $ ($aspect:ty), * ) => {
     {
-        use std::any::TypeId;
         Aspect {
-            accept_types : vec![$( TypeId::of::<$aspect>() ),*],
-            not_accept_types : Vec::new()
+            accept_types : vec![$( {
+                use std::any::TypeId;
+                TypeId::of::<$aspect>()
+            }),*],
+            not_accept_types : Vec::new(),
+            optional : false
         }
     }
 }}
@@ -30,55 +34,41 @@ impl Aspect {
     pub fn all<T : Any + Component>() -> Aspect {
         Aspect {
             accept_types : vec![TypeId::of::<T>()],
-            not_accept_types : Vec::new()
+            not_accept_types : Vec::new(),
+            optional : false
         }
     }
     pub fn all2<T : Any + Component, T1 : Any + Component>() -> Aspect {
         Aspect {
             accept_types : vec![TypeId::of::<T>(), TypeId::of::<T1>()],
-            not_accept_types : Vec::new()
-        }
-    }
-    pub fn all3<T : Any + Component, T1 : Any + Component, T2 : Any + Component>() -> Aspect {
-        Aspect {
-            accept_types : vec![TypeId::of::<T>(), TypeId::of::<T1>(), TypeId::of::<T2>()],
-            not_accept_types : Vec::new()
-        }
-    }
-    pub fn all4<T : Any + Component,
-                T1 : Any + Component,
-                T2 : Any + Component,
-                T3 : Any + Component>() -> Aspect {
-        Aspect {
-            accept_types : vec![TypeId::of::<T>(), TypeId::of::<T1>(), TypeId::of::<T2>(), TypeId::of::<T3>()],
-            not_accept_types : Vec::new()
+            not_accept_types : Vec::new(),
+            optional : false
         }
     }
 
-    pub fn all5<T : Any + Component,
-                T1 : Any + Component,
-                T2 : Any + Component,
-                T3 : Any + Component,
-                T4 : Any + Component>() -> Aspect {
+    pub fn optional(self) -> Aspect {
         Aspect {
-            accept_types : vec![TypeId::of::<T>(), TypeId::of::<T1>(), TypeId::of::<T2>(), TypeId::of::<T3>(), TypeId::of::<T4>()],
-            not_accept_types : Vec::new()
+            accept_types : self.accept_types,
+            not_accept_types : self.not_accept_types,
+            optional : true
         }
     }
-
     pub fn except<T : Any + Component>(mut self) -> Aspect {
         self.not_accept_types.push(TypeId::of::<T>());
         Aspect {
             accept_types : self.accept_types,
-            not_accept_types : self.not_accept_types
+            not_accept_types : self.not_accept_types,
+            optional : false
         }
     }
+
     pub fn except2<T : Any + Component, T1 : Any + Component>(mut self) -> Aspect {
         self.not_accept_types.push(TypeId::of::<T>());
         self.not_accept_types.push(TypeId::of::<T1>());
         Aspect {
             accept_types : self.accept_types,
-            not_accept_types : self.not_accept_types
+            not_accept_types : self.not_accept_types,
+            optional : false
         }
     }
     pub fn except3<T : Any + Component, T1 : Any + Component, T2 : Any + Component>(mut self) -> Aspect {
@@ -87,7 +77,8 @@ impl Aspect {
         self.not_accept_types.push(TypeId::of::<T2>());
         Aspect {
             accept_types : self.accept_types,
-            not_accept_types : self.not_accept_types
+            not_accept_types : self.not_accept_types,
+            optional : false
         }
     }
 }

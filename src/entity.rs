@@ -9,7 +9,8 @@ pub struct Entity {
     pub id                       : i32,
     pub components               : RefCell<HashMap<TypeId, Box<Any>>>,
     pub removed_components       : RefCell<HashSet<TypeId>>,
-    fresh                        : RefCell<bool>
+    fresh                        : RefCell<bool>,
+    deleted                      : RefCell<bool>
 }
 
 pub struct ComponentGuard<'a, T : Any> {
@@ -42,7 +43,8 @@ impl Entity {
             id                      : id,
             components              : RefCell::new(HashMap::new()),
             removed_components      : RefCell::new(HashSet::new()),
-            fresh                   : RefCell::new(false)
+            fresh                   : RefCell::new(false),
+            deleted                   : RefCell::new(false)
         }
     }
 
@@ -52,6 +54,12 @@ impl Entity {
         *self.fresh.borrow_mut() = false;
     }
 
+    /// Mark this entity as not refreshed.
+    /// On beginning of next frame new registered components will affect their systems.
+    pub fn delete(&self) {
+        *self.deleted.borrow_mut() = true;
+    }
+
     pub fn set_fresh(&self) {
         *self.fresh.borrow_mut() = true;
     }
@@ -59,6 +67,10 @@ impl Entity {
     pub fn is_fresh(&self) -> bool {
         *self.fresh.borrow() == true
     }
+    pub fn is_deleted(&self) -> bool {
+        *self.deleted.borrow() == true
+    }
+
     pub fn add_component<T : Any + Component>(&self, component : T) {
         self.components.borrow_mut().insert(TypeId::of::<T>(), Box::new(component));
     }

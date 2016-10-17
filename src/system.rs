@@ -11,7 +11,8 @@ macro_rules! impl_aspect {
             use std::any::TypeId;
             Aspect {
                 accept_types : vec!($(TypeId::of::<$t>()),*),
-                not_accept_types : Vec::new()
+                not_accept_types : Vec::new(),
+                optional : false
             }
         }
     }
@@ -26,6 +27,20 @@ macro_rules! impl_data_aspect {
         }
     }
 }
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! impl_process {
+    ( $s:ident, $entity :ident, |$( $varname:ident: $t:ty ), *| with ($( $datavar:ident ), *) => $code:expr) => {
+        fn process_d(&mut $s, $entity : &mut Entity, data : &mut DataList) {
+            let mut _n = 0;
+            $( let mut $datavar = data.unwrap_nth(_n); _n += 1; )*
+            $( let mut $varname = $entity.get_component::<$t>(); )*
+            $code
+        }
+    };
+}
+
 #[doc(hidden)]
 #[macro_export]
 macro_rules! impl_new {
@@ -209,6 +224,9 @@ impl<'b> DataList<'b> {
     pub fn unwrap_mut_nth<'a>(&'a mut self, n : usize) -> &'a mut Vec<&'b mut Entity> {
         &mut self.data[n]
     }
+    pub fn try_get_nth<'a>(&'a self, n : usize) -> Option<&'a Vec<&'b mut Entity>> {
+        self.data.get(n)
+    }
 
 
     pub fn new(entity_manager : &mut EntityManager<'b>, ids : &Vec<HashSet<i32>>) -> DataList<'b> {
@@ -256,8 +274,16 @@ pub trait System {
     fn on_removed(&self, _ : &mut Entity) {
     }
 
-    fn on_end_frame(&mut self) {
+    fn on_end_frame(&mut self, _ : &mut Vec<&mut Entity>) {
     }
+
+    /// Called when enstead of process* when there is no entities. Usefull for debug purposes.
+    fn process_no_entities(&mut self) {
+    }
+    /// Called when enstead of process* when there is no data entities. Usefull for debug purposes.
+    fn process_no_data(&mut self) {
+    }
+
     #[inline]
     fn process_w(&mut self, _ : &mut Entity, _ : &mut WorldHandle) {
     }

@@ -31,7 +31,7 @@ Simplest system can be created with macro.
 typically, you will need only process some components, like this:
 
 ```ignore
-process_entities!((MoveSystem): |pos: Position, vel: Velocity| => {
+register_system!((MoveSystem): |pos: Position, vel: Velocity| => {
     pos.x += vel.x;
     println!("Moving! position: {}, velocity: {}", pos.x, vel.x);
 });
@@ -68,7 +68,7 @@ impl System for MoveSystem {
 #[macro_use] extern crate tinyprof;
 
 #[cfg(not(feature = "prof"))]
-macro_rules! profile_region { ($name:expr) => {    } }
+macro_rules! profile_region { ($name:expr) => {} }
 
 #[cfg(feature = "serialization")]
 extern crate toml;
