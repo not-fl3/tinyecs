@@ -31,6 +31,14 @@ macro_rules! impl_data_aspect {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! impl_process {
+    ( $s:ident, $entity :ident, |$( $varname:ident: $t:ty ), *| => $code:expr) => {
+        fn process_d(&mut $s, $entity : &mut Entity, _data : &mut DataList) {
+            let mut _n = 0;
+            $( let mut $varname = $entity.get_component::<$t>(); )*
+            $code
+        }
+    };
+
     ( $s:ident, $entity :ident, |$( $varname:ident: $t:ty ), *| with ($( $datavar:ident ), *) => $code:expr) => {
         fn process_d(&mut $s, $entity : &mut Entity, data : &mut DataList) {
             let mut _n = 0;
