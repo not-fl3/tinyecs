@@ -41,21 +41,25 @@ pub struct World {
 /// part of the world, manipulating entities
 pub struct EntityManager<'a> {
     deserializers : ::std::rc::Rc<Box<::serialization::Deserializers>>,
+    new_entities  : Vec<(i32, Entity)>,
     entities      : &'a mut VecMap<Entity>,
     last_id       : &'a mut i32
 }
+impl<'a> Drop for EntityManager<'a> {
+    fn drop(&mut self) {
+        self.apply_creation();
+    }
+}
+
 impl<'a> EntityManager<'a> {
     pub fn create_entity_with_id(&mut self, id : i32) -> &Entity {
         (*self.last_id) = id;
 
         let e = Entity::new(id);
 
-        let old = self.entities.insert(id as usize, e);
-        if let Some(_) = old {
-            panic!("inserting to existing id");
-        }
+        self.new_entities.push((id,  e));
 
-        self.entities.get_mut(*self.last_id as usize).unwrap()
+        &self.new_entities.last().unwrap().1
     }
 
     pub fn create_entity(&mut self) -> &Entity {
@@ -94,6 +98,14 @@ impl<'a> EntityManager<'a> {
 
     pub fn remove_entity(&mut self, id : i32) {
        self.entities.get_mut(id as usize).unwrap().delete()
+    }
+
+    pub fn apply_creation(&mut self) {
+        for (id, entity) in self.new_entities.drain(0 ..) {
+            if let Some(_) = self.entities.insert(id as usize, entity) {
+                panic!("Inserting to already existing entity!");
+            }
+        }
     }
 }
 
@@ -137,9 +149,10 @@ impl World {
     /// ```
     pub fn entity_manager<'a>(&'a mut self) -> EntityManager<'a> {
         EntityManager {
-            last_id  : &mut self.last_id,
-            entities : &mut self.entities,
-            deserializers : self.deserializers.clone()
+            last_id       : &mut self.last_id,
+            entities      : &mut self.entities,
+            deserializers : self.deserializers.clone(),
+            new_entities  : Vec::new()
         }
     }
 
@@ -152,7 +165,8 @@ impl World {
         system.on_created(&mut EntityManager {
             last_id       : &mut self.last_id,
             entities      : &mut self.entities,
-            deserializers : self.deserializers.clone()
+            deserializers : self.deserializers.clone(),
+            new_entities  : Vec::new()
         });
         self.systems.push((SystemData::new(Box::new(system), aspect, data_aspects),
                                         SelectedEntities {
@@ -188,7 +202,8 @@ impl World {
             entity_manager    : EntityManager {
                 last_id       : &mut self.last_id,
                 entities      : &mut self.entities,
-                deserializers : self.deserializers.clone()
+                deserializers : self.deserializers.clone(),
+                new_entities  : Vec::new()
             }
         };
 
